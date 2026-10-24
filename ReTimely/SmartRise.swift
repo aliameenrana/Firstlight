@@ -38,6 +38,10 @@ final class SmartRise {
             command.addTarget { _ in MainActor.assumeIsolated { SmartRise.shared.toggleMute() }; return .success }
         }
         commands.nextTrackCommand.addTarget { _ in MainActor.assumeIsolated { SmartRise.shared.stopTonight() }; return .success }
+        // Some iOS versions list feedback commands, with their titles, in the player's menu.
+        commands.bookmarkCommand.localizedTitle = "Stop Smart Rise"
+        commands.bookmarkCommand.addTarget { _ in MainActor.assumeIsolated { SmartRise.shared.stopTonight() }; return .success }
+        commands.changePlaybackPositionCommand.isEnabled = false
     }
 
     // Timely mapped a 0...1 level to gain with (10^x - 1) / 9 and divided out the stream volume
@@ -134,10 +138,15 @@ final class SmartRise {
     private func showPlaying() {
         guard let target else { return }
         let time = target.formatted(date: .omitted, time: .shortened)
+        // The progress bar spans the Smart Rise window, so its remaining time counts down to the alarm.
+        // The rate stays 1 while muted so the countdown keeps moving; the title shows the mute state.
+        let lead = UserDefaults.standard.double(forKey: SmartRiseKey.lead) * 60
         var info: [String: Any] = [
-            MPMediaItemPropertyTitle: muted ? "Smart Rise (muted)" : "Smart Rise",
-            MPMediaItemPropertyArtist: "Alarm at \(time) · ⏭ stops Smart Rise",
-            MPNowPlayingInfoPropertyPlaybackRate: muted ? 0.0 : 1.0,
+            MPMediaItemPropertyTitle: muted ? "Smart Rise · muted" : "Smart Rise",
+            MPMediaItemPropertyArtist: "Alarm at \(time) · ⏯ mute · ⏭ stop",
+            MPMediaItemPropertyPlaybackDuration: lead,
+            MPNowPlayingInfoPropertyElapsedPlaybackTime: max(0, lead - target.timeIntervalSinceNow),
+            MPNowPlayingInfoPropertyPlaybackRate: 1.0,
         ]
         if let art = UIImage(named: "Artwork") {
             info[MPMediaItemPropertyArtwork] = MPMediaItemArtwork(boundsSize: art.size) { _ in art }
