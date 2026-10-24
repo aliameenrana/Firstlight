@@ -6,6 +6,7 @@ enum Theme: String, CaseIterable {
 
     static let key = "theme"
     static let customKey = "customColors"
+    static let lavaKey = "lavaLamp"
     static let cycleKey = "hueCycle"
     static let cycleMinutesKey = "hueCycleMinutes"
     static let defaultCustom = "1,0.66,0.08;1,0.88,0.4;0.6,0.06,0.05"
@@ -29,14 +30,20 @@ enum Theme: String, CaseIterable {
         return [c[0], c[1], (c[1] + c[2]) / 2, c[2]]
     }
 
-    func colors(at date: Date, custom: String, cycleMinutes: Double? = nil) -> [Color] {
+    // Two neighbours of the glow colours and a split complement: lively against the gradient without clashing.
+    static func waxColors(_ p: [Palette.RGB]) -> [Color] {
+        [HueCycle.rotate(p[1], by: 0.7), HueCycle.rotate(p[2], by: -0.7), HueCycle.rotate(p[1], by: 2.6)]
+            .map(Palette.color)
+    }
+
+    func palette(at date: Date, custom: String, cycleMinutes: Double? = nil) -> [Palette.RGB] {
         var c = rgb(at: date, custom: custom)
         if let cycleMinutes {
             // Phase comes from the wall clock, so the hue is continuous across launches instead of snapping back.
             let turn = date.timeIntervalSinceReferenceDate / (cycleMinutes * 60)
             c = c.map { HueCycle.rotate($0, by: (turn - turn.rounded(.down)) * 2 * .pi) }
         }
-        return c.map { Color(red: $0.x, green: $0.y, blue: $0.z) }
+        return c
     }
 
     static func parse(_ s: String) -> [Palette.RGB] {
@@ -90,7 +97,7 @@ struct ThemeView: View {
     }
 
     private func swatch(_ t: Theme) -> some View {
-        let c = t.colors(at: .now, custom: custom)
+        let c = t.palette(at: .now, custom: custom).map(Palette.color)
         return Circle()
             .fill(LinearGradient(colors: [c[0], c[1], c[3]], startPoint: .top, endPoint: .bottom))
             .frame(width: 56, height: 56)
@@ -238,9 +245,15 @@ enum HueCycle {
 struct CycleSettings: View {
     @AppStorage(Theme.cycleKey) private var on = false
     @AppStorage(Theme.cycleMinutesKey) private var minutes = 10.0
+    @AppStorage(Theme.lavaKey) private var lava = false
 
     var body: some View {
         VStack(spacing: 10) {
+            Picker("Floating", selection: $lava) {
+                Text("Bubbles").tag(false)
+                Text("Lava lamp").tag(true)
+            }
+            .pickerStyle(.segmented)
             Toggle("Cycle colours", isOn: $on.animation())
             if on {
                 Picker("Full cycle", selection: $minutes) {

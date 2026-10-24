@@ -7,13 +7,16 @@ struct DreamyBackground: View {
     @AppStorage(Theme.customKey) private var custom = Theme.defaultCustom
     @AppStorage(Theme.cycleKey) private var cycle = false
     @AppStorage(Theme.cycleMinutesKey) private var cycleMinutes = 10.0
+    @AppStorage(Theme.lavaKey) private var lava = false
     private let touch = Touch.shared
 
     var body: some View {
         // The motion is slow; 30 fps is indistinguishable from 120 and quarters the GPU work on ProMotion.
         TimelineView(.animation(minimumInterval: 1.0 / 30)) { context in
             let t = Float(context.date.timeIntervalSince(Self.start))
-            let p = theme.colors(at: context.date, custom: custom, cycleMinutes: cycle ? cycleMinutes : nil)
+            let rgb = theme.palette(at: context.date, custom: custom, cycleMinutes: cycle ? cycleMinutes : nil)
+            let p = rgb.map(Palette.color)
+            let w = lava ? Theme.waxColors(rgb) : p
             GeometryReader { geo in
                 // Everything here is soft, so the shader runs on a third-size view that is then scaled up:
                 // 9x fewer pixels to shade. drawingGroup flattens it first so the scale stretches a texture.
@@ -23,7 +26,8 @@ struct DreamyBackground: View {
                         .float2(small), .float(t),
                         .color(p[0]), .color(p[1]), .color(p[2]), .color(p[3]),
                         .float4(Float((touch.pop?.point.x ?? 0) / geo.size.width), Float((touch.pop?.point.y ?? 0) / geo.size.height),
-                                touch.pop.map { Float($0.time.timeIntervalSince(Self.start)) } ?? -100, 0)))
+                                touch.pop.map { Float($0.time.timeIntervalSince(Self.start)) } ?? -100, lava ? 1 : 0),
+                        .color(w[0]), .color(w[1]), .color(w[2])))
                     .frame(width: small.width, height: small.height)
                     .drawingGroup(opaque: true)
                     .scaleEffect(Self.downscale, anchor: .topLeading)
@@ -35,6 +39,7 @@ struct DreamyBackground: View {
 
 enum Palette {
     typealias RGB = SIMD3<Double>
+    static func color(_ c: RGB) -> Color { Color(red: c.x, green: c.y, blue: c.z) }
     static let night: [RGB] = [[0.02, 0.30, 0.50], [0.10, 0.80, 0.80], [0.40, 0.30, 0.90], [0.01, 0.04, 0.22]]
     static let dawn: [RGB] = [[0.98, 0.70, 0.36], [1.00, 0.86, 0.55], [0.92, 0.40, 0.56], [0.45, 0.12, 0.36]]
     static let day: [RGB] = [[1.00, 0.66, 0.08], [1.00, 0.88, 0.40], [0.98, 0.32, 0.18], [0.60, 0.06, 0.05]]
