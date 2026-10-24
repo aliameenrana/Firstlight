@@ -2,6 +2,7 @@ import SwiftUI
 
 struct TimelineScreen: View {
     let alarms: [WakeAlarm]
+    @Binding var placing: Bool
     var onCreate: (Int) -> Void
     var onEdit: (WakeAlarm) -> Void
     var onChange: () -> Void
@@ -22,6 +23,7 @@ struct TimelineScreen: View {
                     .contentShape(Rectangle())
                     .gesture(DragGesture(minimumDistance: 0)
                         .onChanged { value in
+                            guard placing else { return }
                             if let touch, toMinutes(touch) != toMinutes(value.location.y) {
                                 UISelectionFeedbackGenerator().selectionChanged()
                             }
@@ -32,7 +34,9 @@ struct TimelineScreen: View {
                             }
                         }
                         .onEnded { value in
+                            guard placing, touch != nil else { return }
                             touch = nil
+                            placing = false
                             withAnimation(.spring(duration: 0.8, bounce: 0.45)) { bulge = 0 }
                             onCreate(toMinutes(value.location.y))
                         })
@@ -64,8 +68,8 @@ struct TimelineScreen: View {
                         .offset(x: 120, y: toY(m) - 88)
                 }
 
-                if alarms.isEmpty && touch == nil {
-                    Text("Drag along the timeline to add an alarm")
+                if placing && touch == nil {
+                    Text("Drag along the timeline to set the time")
                         .font(.callout.weight(.light))
                         .foregroundStyle(.white.opacity(0.85))
                         .frame(width: geo.size.width)

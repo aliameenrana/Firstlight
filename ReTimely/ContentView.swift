@@ -7,6 +7,7 @@ struct ContentView: View {
     @Query(sort: [SortDescriptor(\WakeAlarm.hour), SortDescriptor(\WakeAlarm.minute)]) private var alarms: [WakeAlarm]
     @State private var page = ProcessInfo.processInfo.arguments.contains("-alarms") ? 1 : 0
     @State private var editing: WakeAlarm?
+    @State private var placing = false
 
     var body: some View {
         ZStack {
@@ -15,7 +16,7 @@ struct ContentView: View {
                 ClockPage(next: alarms.filter(\.enabled).compactMap { $0.plan.nextFire() }.min())
                     .transition(.opacity)
             } else {
-                TimelineScreen(alarms: alarms, onCreate: create, onEdit: open, onChange: sync)
+                TimelineScreen(alarms: alarms, placing: $placing, onCreate: create, onEdit: open, onChange: sync)
                     .transition(.opacity)
             }
             VStack {
@@ -25,6 +26,18 @@ struct ContentView: View {
                 }
                 .glassEffect(.clear, in: .capsule)
                 Spacer()
+                Button {
+                    page = 1
+                    withAnimation(.spring(duration: 0.35)) { placing.toggle() }
+                } label: {
+                    Image(systemName: "plus")
+                        .font(.title2.weight(.light))
+                        .rotationEffect(.degrees(placing ? 45 : 0))
+                        .foregroundStyle(.white)
+                        .frame(width: 64, height: 64)
+                }
+                .glassEffect(.clear.interactive(), in: .circle)
+                .padding(.bottom, 20)
             }
             if let editing {
                 Color.black.opacity(0.25).ignoresSafeArea()
@@ -40,7 +53,7 @@ struct ContentView: View {
     }
 
     private func tab(_ index: Int, _ icon: String) -> some View {
-        Button { page = index } label: {
+        Button { page = index; placing = false } label: {
             Image(systemName: icon)
                 .font(.system(size: 17, weight: .light))
                 .foregroundStyle(.white.opacity(page == index ? 1 : 0.45))

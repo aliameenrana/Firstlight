@@ -45,40 +45,32 @@ static float fbm(float2 p) {
         float shimmer = 0.65 + 0.35 * sin(x * 2.3 - t * 0.25 + fi * 2.0);
         float3 tint = mix(float3(glowA.rgb), float3(glowB.rgb), saturate(dy * 3.0 + fi * 0.3));
         tint = mix(tint, float3(0.85, 1.0, 0.95), 0.45);
-        aurora += tint * curtain * rays * shimmer * (0.80 - fi * 0.18);
+        aurora += tint * curtain * rays * shimmer * (0.40 - fi * 0.09);
     }
     col = 1.0 - (1.0 - col) * (1.0 - saturate(aurora));
 
-    // Glass bubbles: clear body, fresnel rim, iridescent edge and two specular highlights.
-    // Layer 0 is nearest: larger, sharper and faster.
-    float3 glass = float3(0.0);
+    // Bokeh: soft, filled, faintly lighter discs drifting upward, as in the original.
+    // Layer 0 is nearest: larger, softer and faster.
     for (int i = 0; i < 4; i++) {
         float L = float(i);
-        float scale = 2.6 + L * 2.6;
-        float speed = 0.035 - L * 0.006;
+        float scale = 2.2 + L * 2.4;
+        float speed = 0.012 - L * 0.002;
         float2 g = float2(q.x * scale, (q.y + t * speed) * scale);
-        g.x += 0.22 * sin(g.y * 0.9 + t * 0.4 + L * 2.0);
+        g.x += 0.15 * sin(g.y * 0.7 + t * 0.15 + L * 2.0);
         float2 id = floor(g);
         float2 f = fract(g) - 0.5;
         float r = hash21(id + L * 13.1);
-        if (r < 0.42) {
-            float2 o = (float2(hash21(id + 3.1), hash21(id + 7.7)) - 0.5) * 0.35;
-            float rad = 0.08 + 0.20 * hash21(id + 5.3);
-            float2 d2 = (f - o) / rad;
-            float d = length(d2);
-            float soft = 0.03 + 0.07 * L;
-            float body = 1.0 - smoothstep(1.0 - soft, 1.0 + soft, d);
-            float rim = pow(smoothstep(0.5, 1.0, d), 2.5) * body;
-            float2 s1 = d2 - float2(-0.38, -0.42);
-            float2 s2 = d2 - float2(0.42, 0.46);
-            float spec = exp(-dot(s1, s1) * 26.0) + 0.35 * exp(-dot(s2, s2) * 70.0);
-            float3 iri = 0.5 + 0.5 * cos(6.2831 * (d * 0.9 + float3(0.0, 0.33, 0.67) + t * 0.04 + r));
-            float depth = 1.0 / (1.0 + L * 0.7);
-            float twinkle = 0.75 + 0.25 * sin(t * (0.5 + r) + r * 30.0);
-            glass += (float3(0.05) * body + mix(float3(1.0), iri, 0.45) * rim * 0.6 + float3(spec) * 0.85) * depth * twinkle;
+        if (r < 0.5) {
+            float2 o = (float2(hash21(id + 3.1), hash21(id + 7.7)) - 0.5) * 0.4;
+            float rad = 0.10 + 0.22 * hash21(id + 5.3);
+            float d = length(f - o) / rad;
+            float soft = 0.12 + 0.10 * (3.0 - L);
+            float disc = 1.0 - smoothstep(1.0 - soft, 1.0, d);
+            float alpha = (0.05 + 0.10 * hash21(id + 9.0)) * (0.8 + 0.2 * sin(t * 0.3 + r * 30.0));
+            float3 light = mix(float3(glowA.rgb), float3(1.0), 0.5);
+            col = mix(col, light, disc * alpha);
         }
     }
-    col += glass * 0.55;
 
     float2 v = uv - 0.5;
     col *= 1.0 - 0.45 * dot(v, v);
