@@ -37,7 +37,7 @@ static float bubble(float2 id, float2 g, int i, thread float &alpha, float t) {
 }
 
 [[ stitchable ]] half4 dreamy(float2 pos, half4 color, float2 size, float t,
-                              half4 top, half4 glowA, half4 glowB, half4 bottom, float4 pop, half4 waxA, half4 waxB, half4 waxC) {
+                              half4 top, half4 glowA, half4 glowB, half4 bottom, float4 pop) {
     float2 uv = pos / size;
     float aspect = size.x / size.y;
     float2 q = float2(uv.x * aspect, uv.y);
@@ -78,13 +78,14 @@ static float bubble(float2 id, float2 g, int i, thread float &alpha, float t) {
         float field = 0.0;
         float3 tint = float3(0.0);
         float tw = 0.0;
-        float3 waxes[3] = { float3(waxA.rgb), float3(waxB.rgb), float3(waxC.rgb) };
+        // Wax is drawn from the theme's own glow colours, lifted slightly, so it sits inside the gradient instead of on it.
+        float3 waxes[3] = { float3(glowA.rgb), float3(glowB.rgb), mix(float3(glowA.rgb), float3(top.rgb), 0.5) };
         for (int k = 0; k < 6; k++) {
             float fk = float(k);
             float h = hash21(float2(fk, 3.7));
             float2 c = float2(aspect * (0.15 + 0.7 * hash21(float2(fk, 1.3)) + 0.06 * sin(t * 0.05 + fk * 2.1)),
                               0.5 + 0.42 * sin(t * (0.018 + 0.012 * h) + fk * 1.7));
-            float r = 0.045 + 0.04 * hash21(float2(fk, 8.1));
+            float r = 0.022 + 0.018 * hash21(float2(fk, 8.1));
             float2 d = q - c;
             // Stretched vertically while moving, like wax in a lamp.
             d.y *= 0.85;
@@ -94,13 +95,13 @@ static float bubble(float2 id, float2 g, int i, thread float &alpha, float t) {
             tw += w * w * w;
         }
         // Cubing each blob's weight keeps its own colour and confines blending to the neck where blobs merge.
-        float3 wax = tint / max(tw, 1e-6);
-        float body = smoothstep(0.9, 1.05, field);
+        float3 wax = mix(tint / max(tw, 1e-6), float3(1.0), 0.12);
+        float body = smoothstep(0.7, 1.15, field);
         float glow = smoothstep(0.4, 0.9, field) * (1.0 - body);
         // Brighter towards the core reads as lit, rounded wax instead of a flat cut-out.
         float core = saturate((field - 1.0) * 0.35);
         wax = mix(wax, float3(1.0), core * 0.25);
-        col = mix(col, wax, body * 0.75 + glow * 0.15);
+        col = mix(col, wax, body * 0.16 + glow * 0.04);
         float2 v = uv - 0.5;
         col *= 1.0 - 0.45 * dot(v, v);
         col += (hash21(pos + fract(t) * 91.0) - 0.5) * 0.018;

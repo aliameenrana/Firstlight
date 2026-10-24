@@ -7,8 +7,6 @@ enum Theme: String, CaseIterable {
     static let key = "theme"
     static let customKey = "customColors"
     static let lavaKey = "lavaLamp"
-    static let cycleKey = "hueCycle"
-    static let cycleMinutesKey = "hueCycleMinutes"
     static let defaultCustom = "1,0.66,0.08;1,0.88,0.4;0.6,0.06,0.05"
 
     private var preset: [Palette.RGB]? {
@@ -28,22 +26,6 @@ enum Theme: String, CaseIterable {
         if self == .auto { return Palette.at(date) }
         let c = Self.parse(custom)
         return [c[0], c[1], (c[1] + c[2]) / 2, c[2]]
-    }
-
-    // Two neighbours of the glow colours and a split complement: lively against the gradient without clashing.
-    static func waxColors(_ p: [Palette.RGB]) -> [Color] {
-        [HueCycle.rotate(p[1], by: 0.7), HueCycle.rotate(p[2], by: -0.7), HueCycle.rotate(p[1], by: 2.6)]
-            .map(Palette.color)
-    }
-
-    func palette(at date: Date, custom: String, cycleMinutes: Double? = nil) -> [Palette.RGB] {
-        var c = rgb(at: date, custom: custom)
-        if let cycleMinutes {
-            // Phase comes from the wall clock, so the hue is continuous across launches instead of snapping back.
-            let turn = date.timeIntervalSinceReferenceDate / (cycleMinutes * 60)
-            c = c.map { HueCycle.rotate($0, by: (turn - turn.rounded(.down)) * 2 * .pi) }
-        }
-        return c
     }
 
     static func parse(_ s: String) -> [Palette.RGB] {
@@ -86,7 +68,7 @@ struct ThemeView: View {
                 colorDot("Glow", 1)
                 colorDot("Bottom", 2)
             }
-            CycleSettings()
+            FloatSettings()
             SmartRiseSettings()
         }
         .padding(.vertical, 24)
@@ -97,7 +79,7 @@ struct ThemeView: View {
     }
 
     private func swatch(_ t: Theme) -> some View {
-        let c = t.palette(at: .now, custom: custom).map(Palette.color)
+        let c = t.rgb(at: .now, custom: custom).map(Palette.color)
         return Circle()
             .fill(LinearGradient(colors: [c[0], c[1], c[3]], startPoint: .top, endPoint: .bottom))
             .frame(width: 56, height: 56)
@@ -203,70 +185,15 @@ struct SmartRiseSettings: View {
     }
 }
 
-// Rotating hue in OKLab keeps perceived lightness fixed, so the cycle never passes through a sudden bright
-// yellow or a dark muddy band the way an HSV rotation does, and the four colours keep their relative contrast.
-enum HueCycle {
-    static func rotate(_ c: Palette.RGB, by angle: Double) -> Palette.RGB {
-        let lab = oklab(c)
-        let (s, k) = (sin(angle), cos(angle))
-        var a = lab.y * k - lab.z * s, b = lab.y * s + lab.z * k
-        // Rotated colours can leave sRGB; pulling chroma in keeps hue and lightness instead of clipping a channel.
-        for _ in 0..<8 {
-            let out = rgb(.init(lab.x, a, b))
-            if out.min() >= -0.001 && out.max() <= 1.001 { return simd_clamp(out, .zero, .one) }
-            a *= 0.85; b *= 0.85
-        }
-        return simd_clamp(rgb(.init(lab.x, a, b)), .zero, .one)
-    }
-
-    private static func lin(_ v: Double) -> Double { v <= 0.04045 ? v / 12.92 : pow((v + 0.055) / 1.055, 2.4) }
-    private static func gam(_ v: Double) -> Double { v <= 0.0031308 ? v * 12.92 : 1.055 * pow(max(v, 0), 1 / 2.4) - 0.055 }
-
-    private static func oklab(_ c: Palette.RGB) -> Palette.RGB {
-        let r = lin(c.x), g = lin(c.y), b = lin(c.z)
-        let l = cbrt(0.4122214708 * r + 0.5363325363 * g + 0.0514459929 * b)
-        let m = cbrt(0.2119034982 * r + 0.6806995451 * g + 0.1073969566 * b)
-        let s = cbrt(0.0883024619 * r + 0.2817188376 * g + 0.6299787005 * b)
-        return .init(0.2104542553 * l + 0.7936177850 * m - 0.0040720468 * s,
-                     1.9779984951 * l - 2.4285922050 * m + 0.4505937099 * s,
-                     0.0259040371 * l + 0.7827717662 * m - 0.8086757660 * s)
-    }
-
-    private static func rgb(_ c: Palette.RGB) -> Palette.RGB {
-        let l = pow(c.x + 0.3963377774 * c.y + 0.2158037573 * c.z, 3)
-        let m = pow(c.x - 0.1055613458 * c.y - 0.0638541728 * c.z, 3)
-        let s = pow(c.x - 0.0894841775 * c.y - 1.2914855480 * c.z, 3)
-        return .init(gam(4.0767416621 * l - 3.3077085913 * m + 0.2309300596 * s),
-                     gam(-1.2684380046 * l + 2.6097574011 * m - 0.3413193965 * s),
-                     gam(-0.0041960771 * l - 0.7034195420 * m + 1.7076147010 * s))
-    }
-}
-
-struct CycleSettings: View {
-    @AppStorage(Theme.cycleKey) private var on = false
-    @AppStorage(Theme.cycleMinutesKey) private var minutes = 10.0
+struct FloatSettings: View {
     @AppStorage(Theme.lavaKey) private var lava = false
 
     var body: some View {
-        VStack(spacing: 10) {
-            Picker("Floating", selection: $lava) {
-                Text("Bubbles").tag(false)
-                Text("Lava lamp").tag(true)
-            }
-            .pickerStyle(.segmented)
-            Toggle("Cycle colours", isOn: $on.animation())
-            if on {
-                Picker("Full cycle", selection: $minutes) {
-                    Text("1 min").tag(1.0)
-                    Text("10 min").tag(10.0)
-                    Text("1 hour").tag(60.0)
-                    Text("1 day").tag(1440.0)
-                }
-                .pickerStyle(.segmented)
-                Text("The whole theme turns around the colour wheel, keeping its brightness.")
-                    .font(.caption).opacity(0.6).frame(maxWidth: .infinity, alignment: .leading)
-            }
+        Picker("Floating", selection: $lava) {
+            Text("Bubbles").tag(false)
+            Text("Lava lamp").tag(true)
         }
+        .pickerStyle(.segmented)
         .padding(16)
         .frost(.rect(cornerRadius: 26))
         .padding(.horizontal, 20)

@@ -5,8 +5,6 @@ struct DreamyBackground: View {
     private static let downscale: CGFloat = 3
     @AppStorage(Theme.key) private var theme = Theme.ocean
     @AppStorage(Theme.customKey) private var custom = Theme.defaultCustom
-    @AppStorage(Theme.cycleKey) private var cycle = false
-    @AppStorage(Theme.cycleMinutesKey) private var cycleMinutes = 10.0
     @AppStorage(Theme.lavaKey) private var lava = false
     private let touch = Touch.shared
 
@@ -14,9 +12,7 @@ struct DreamyBackground: View {
         // The motion is slow; 30 fps is indistinguishable from 120 and quarters the GPU work on ProMotion.
         TimelineView(.animation(minimumInterval: 1.0 / 30)) { context in
             let t = Float(context.date.timeIntervalSince(Self.start))
-            let rgb = theme.palette(at: context.date, custom: custom, cycleMinutes: cycle ? cycleMinutes : nil)
-            let p = rgb.map(Palette.color)
-            let w = lava ? Theme.waxColors(rgb) : p
+            let p = theme.rgb(at: context.date, custom: custom).map(Palette.color)
             GeometryReader { geo in
                 // Everything here is soft, so the shader runs on a third-size view that is then scaled up:
                 // 9x fewer pixels to shade. drawingGroup flattens it first so the scale stretches a texture.
@@ -26,8 +22,7 @@ struct DreamyBackground: View {
                         .float2(small), .float(t),
                         .color(p[0]), .color(p[1]), .color(p[2]), .color(p[3]),
                         .float4(Float((touch.pop?.point.x ?? 0) / geo.size.width), Float((touch.pop?.point.y ?? 0) / geo.size.height),
-                                touch.pop.map { Float($0.time.timeIntervalSince(Self.start)) } ?? -100, lava ? 1 : 0),
-                        .color(w[0]), .color(w[1]), .color(w[2])))
+                                touch.pop.map { Float($0.time.timeIntervalSince(Self.start)) } ?? -100, lava ? 1 : 0)))
                     .frame(width: small.width, height: small.height)
                     .drawingGroup(opaque: true)
                     .scaleEffect(Self.downscale, anchor: .topLeading)
