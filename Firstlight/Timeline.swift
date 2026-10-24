@@ -2,6 +2,7 @@ import SwiftUI
 
 struct TimelineScreen: View {
     let alarms: [WakeAlarm]
+    var editing: WakeAlarm?
     @Binding var placing: Bool
     var onCreate: (Int) -> Void
     var onEdit: (WakeAlarm) -> Void
@@ -49,7 +50,7 @@ struct TimelineScreen: View {
                 ForEach(alarms) { alarm in
                     AlarmLine(alarm: alarm, onChange: onChange)
                         .offset(x: 74, y: toY(alarm.minutes) - 26)
-                        .opacity(touch == nil ? 1 : 0.3)
+                        .opacity(alarm.id == editing?.id ? 0 : touch == nil ? 1 : 0.3)
                         .onTapGesture { onEdit(alarm) }
                         .gesture(DragGesture(minimumDistance: 10, coordinateSpace: .named("timeline"))
                             .onChanged { alarm.setMinutes(toMinutes($0.location.y)) }
