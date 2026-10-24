@@ -1,0 +1,7 @@
+audio-source/
+reference/
+Sounds/
+*.xcodeproj
+build/
+DerivedData/
+.DS_Store

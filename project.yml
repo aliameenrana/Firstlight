@@ -1,0 +1,28 @@
+name: ReTimely
+options:
+  bundleIdPrefix: com.aliameenrana
+  deploymentTarget:
+    iOS: "26.0"
+targets:
+  ReTimely:
+    type: application
+    platform: iOS
+    sources:
+      - ReTimely
+      - path: Sounds
+        optional: true
+        buildPhase: resources
+    info:
+      path: ReTimely/Info.plist
+      properties:
+        CFBundleDisplayName: ReTimely
+        UILaunchScreen: {}
+        UIBackgroundModes: [audio]
+        NSAlarmKitUsageDescription: ReTimely schedules your alarms.
+        UISupportedInterfaceOrientations: [UIInterfaceOrientationPortrait]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.aliameenrana.retimely
+        SWIFT_VERSION: "5.0"
+        TARGETED_DEVICE_FAMILY: "1"
+        CODE_SIGN_STYLE: Automatic
