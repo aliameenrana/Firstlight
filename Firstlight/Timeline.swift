@@ -6,6 +6,7 @@ struct TimelineScreen: View {
     @Binding var placing: Bool
     var onCreate: (Int) -> Void
     var onEdit: (WakeAlarm) -> Void
+    var onDelete: (WakeAlarm) -> Void
     var onChange: () -> Void
 
     @State private var touch: CGFloat?
@@ -54,6 +55,10 @@ struct TimelineScreen: View {
                         .allowsHitTesting(!placing)
                         .animation(.easeInOut(duration: 0.25), value: placing)
                         .onTapGesture { onEdit(alarm) }
+                        .contextMenu {
+                            Button("Edit", systemImage: "pencil") { onEdit(alarm) }
+                            Button("Delete", systemImage: "trash", role: .destructive) { onDelete(alarm) }
+                        }
                         .gesture(DragGesture(minimumDistance: 10, coordinateSpace: .named("timeline"))
                             .onChanged { value in
                                 let m = toMinutes(value.location.y)

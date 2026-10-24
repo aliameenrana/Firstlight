@@ -17,7 +17,7 @@ struct ContentView: View {
                 ClockPage(next: alarms.filter(\.enabled).compactMap { $0.plan.nextFire() }.min(), onShowAlarms: { page = 1 })
                     .transition(.opacity)
             } else {
-                TimelineScreen(alarms: alarms, editing: editing, placing: $placing, onCreate: create, onEdit: open, onChange: sync)
+                TimelineScreen(alarms: alarms, editing: editing, placing: $placing, onCreate: create, onEdit: open, onDelete: remove, onChange: sync)
                     .transition(.opacity)
             }
             Group {
