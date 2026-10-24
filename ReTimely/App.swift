@@ -3,7 +3,10 @@ import SwiftData
 
 @main
 struct ReTimelyApp: App {
-    init() { SmartRiseKey.register() }
+    init() {
+        SmartRiseKey.register()
+        SmartRiseNotice.shared.register()
+    }
 
     var body: some Scene {
         WindowGroup {
