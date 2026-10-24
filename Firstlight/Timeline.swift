@@ -179,7 +179,6 @@ struct EditorCard: View {
     var onDelete: () -> Void
     var onDone: () -> Void
     @State private var dragStart: Int?
-    @State private var confirmDelete = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 18) {
@@ -230,10 +229,7 @@ struct EditorCard: View {
             .tint(.white.opacity(0.35))
             soundRow("Sound", icon: "music.note", selection: $alarm.sound, options: Sounds.all)
             HStack {
-                Button { confirmDelete = true } label: { Image(systemName: "trash").font(.body.weight(.light)) }
-                    .confirmationDialog("Delete this alarm?", isPresented: $confirmDelete) {
-                        Button("Delete", role: .destructive, action: onDelete)
-                    }
+                Button (action: onDelete) label: { Image(systemName: "trash").font(.body.weight(.light)) }
                 Spacer()
                 Button("Done", action: onDone).fontWeight(.medium)
             }
