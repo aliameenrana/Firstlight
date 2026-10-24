@@ -32,15 +32,13 @@ final class SmartRise {
                 DispatchQueue.main.async { MainActor.assumeIsolated { _ = SmartRise.shared.player?.play() } }
             }
         }
-        // The lock screen player has no labelled buttons: play/pause mutes, next-track stops.
+        // The lock screen player shows only play/pause, which mutes. Stopping is done from the notification.
         let commands = MPRemoteCommandCenter.shared()
         for command in [commands.togglePlayPauseCommand, commands.playCommand, commands.pauseCommand] {
             command.addTarget { _ in MainActor.assumeIsolated { SmartRise.shared.toggleMute() }; return .success }
         }
-        commands.nextTrackCommand.addTarget { _ in MainActor.assumeIsolated { SmartRise.shared.stopTonight() }; return .success }
-        // Some iOS versions list feedback commands, with their titles, in the player's menu.
-        commands.bookmarkCommand.localizedTitle = "Stop Smart Rise"
-        commands.bookmarkCommand.addTarget { _ in MainActor.assumeIsolated { SmartRise.shared.stopTonight() }; return .success }
+        commands.nextTrackCommand.isEnabled = false
+        commands.previousTrackCommand.isEnabled = false
         commands.changePlaybackPositionCommand.isEnabled = false
     }
 
@@ -143,7 +141,7 @@ final class SmartRise {
         let lead = UserDefaults.standard.double(forKey: SmartRiseKey.lead) * 60
         var info: [String: Any] = [
             MPMediaItemPropertyTitle: muted ? "Smart Rise · muted" : "Smart Rise",
-            MPMediaItemPropertyArtist: "Alarm at \(time) · ⏯ mute · ⏭ stop",
+            MPMediaItemPropertyArtist: "Alarm at \(time)",
             MPMediaItemPropertyPlaybackDuration: lead,
             MPNowPlayingInfoPropertyElapsedPlaybackTime: max(0, lead - target.timeIntervalSinceNow),
             MPNowPlayingInfoPropertyPlaybackRate: 1.0,
