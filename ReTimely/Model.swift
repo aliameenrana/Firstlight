@@ -34,14 +34,14 @@ struct Plan {
 enum Sounds {
     static let all: [String] = (Bundle.main.urls(forResourcesWithExtension: "caf", subdirectory: nil) ?? [])
         .map { $0.deletingPathExtension().lastPathComponent }.sorted()
-    // Timely's own names, from its ringtone registry, keyed by the SoundCloud upload's file name.
+    // Display names, keyed by the SoundCloud upload's file name.
     private static let names = [
-        "dong": "Primus", "summerday": "Summer day", "live": "Live", "angels_harp": "Angels Harp", "wecksong_1": "Lyra",
-        "still_dreamin": "Carina", "past_time": "Past time", "hurry": "Hurry", "wake_me_soft": "Atlas", "get_up": "Virgo",
-        "good_morning": "Lanx", "glockenspiel_6": "Atria", "vib_7": "Vega", "xylo_3": "Lux", "la_gitar": "Dalia",
-        "sunrise1": "Sunrise", "awakening": "Awakening", "keep_it_simple": "Avior", "dream_is_over": "Sky", "to_late": "Spica",
-        "belling": "Church", "smart1": "Crescendo", "smart2": "Happy", "smart3": "Playful", "smartnature": "Tribal",
-        "smartnight5": "Gentle Night", "smartwater2": "Deep Ocean",
+        "dong": "Lanternbell", "summerday": "Midsummer", "live": "Kindling", "angels_harp": "Halo", "wecksong_1": "Daybreak",
+        "still_dreamin": "Halflight", "past_time": "Firstlight", "hurry": "Sunburst", "wake_me_soft": "Softwake", "get_up": "Morning Star",
+        "good_morning": "Golden Hour", "glockenspiel_6": "Glimmer", "vib_7": "Starling", "xylo_3": "Dewdrop", "la_gitar": "Ember",
+        "sunrise1": "Sunward", "awakening": "Skyglow", "keep_it_simple": "Clear Sky", "dream_is_over": "Moonset", "to_late": "Rushlight",
+        "belling": "Matins", "smart1": "Riselight", "smart2": "Paleglow", "smart3": "Driftlight", "smartnature": "Northglow",
+        "smartnight5": "Nightfade", "smartwater2": "Tidelight",
     ]
 
     static func title(_ file: String) -> String {
