@@ -38,12 +38,25 @@ enum Theme: String, CaseIterable {
 }
 
 struct ThemeView: View {
+    @Environment(\.dismiss) private var dismiss
     @AppStorage(Theme.key) private var theme = Theme.auto
     @AppStorage(Theme.customKey) private var custom = Theme.defaultCustom
 
     var body: some View {
+        ScrollView {
         VStack(spacing: 22) {
-            Text("Theme").font(.title3.weight(.light))
+            HStack {
+                Text("Settings").font(.title2.weight(.light))
+                Spacer()
+                Button { dismiss() } label: {
+                    Image(systemName: "xmark")
+                        .font(.system(size: 15, weight: .medium))
+                        .frame(width: 36, height: 36)
+                }
+                .frost(.circle)
+            }
+            .padding(.horizontal, 20)
+            Text("Theme").font(.title3.weight(.light)).frame(maxWidth: .infinity, alignment: .leading).padding(.horizontal, 20)
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 14) {
                     ForEach(Theme.allCases.filter { $0 != .custom }, id: \.self) { swatch($0) }
@@ -59,10 +72,10 @@ struct ThemeView: View {
             }
             SmartRiseSettings()
         }
-        .foregroundStyle(.white)
         .padding(.vertical, 24)
-        .presentationDetents([.height(320), .large])
-        .presentationDragIndicator(.visible)
+        }
+        .foregroundStyle(.white)
+        .presentationDetents([.large])
         .presentationBackground(.black.opacity(0.55))
     }
 
