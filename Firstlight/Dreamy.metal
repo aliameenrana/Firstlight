@@ -80,7 +80,7 @@ static float bubble(float2 id, float2 g, int i, thread float &alpha, float t) {
         float tw = 0.0;
         // Wax is drawn from the theme's own glow colours, lifted slightly, so it sits inside the gradient instead of on it.
         float3 waxes[3] = { float3(glowA.rgb), float3(glowB.rgb), mix(float3(glowA.rgb), float3(top.rgb), 0.5) };
-        for (int k = 0; k < 6; k++) {
+        for (int k = 0; k < 12; k++) {
             float fk = float(k);
             float h = hash21(float2(fk, 3.7));
             float2 c = float2(aspect * (0.15 + 0.7 * hash21(float2(fk, 1.3)) + 0.06 * sin(t * 0.05 + fk * 2.1)),
