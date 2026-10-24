@@ -53,8 +53,19 @@ struct TimelineScreen: View {
                         .opacity(alarm.id == editing?.id ? 0 : touch == nil ? 1 : 0.3)
                         .onTapGesture { onEdit(alarm) }
                         .gesture(DragGesture(minimumDistance: 10, coordinateSpace: .named("timeline"))
-                            .onChanged { alarm.setMinutes(toMinutes($0.location.y)) }
-                            .onEnded { _ in onChange() })
+                            .onChanged { value in
+                                let m = toMinutes(value.location.y)
+                                if m != alarm.minutes { UISelectionFeedbackGenerator().selectionChanged() }
+                                alarm.setMinutes(m)
+                                withAnimation(.interactiveSpring(duration: 0.25)) {
+                                    focus = Double(toY(m))
+                                    bulge = 1
+                                }
+                            }
+                            .onEnded { _ in
+                                withAnimation(.spring(duration: 0.8, bounce: 0.45)) { bulge = 0 }
+                                onChange()
+                            })
                 }
                 }
                 }
