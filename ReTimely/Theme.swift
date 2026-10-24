@@ -1,0 +1,122 @@
+import SwiftUI
+
+enum Theme: String, CaseIterable {
+    case auto, amber, ocean, teal, magenta, forest, violet, custom
+
+    static let key = "theme"
+    static let customKey = "customColors"
+    static let defaultCustom = "1,0.66,0.08;1,0.88,0.4;0.6,0.06,0.05"
+
+    private var preset: [Palette.RGB]? {
+        switch self {
+        case .amber: Palette.day
+        case .ocean: [[0.04, 0.45, 0.85], [0.20, 0.75, 1.00], [0.25, 0.30, 0.95], [0.02, 0.06, 0.35]]
+        case .teal: [[0.10, 0.75, 0.70], [0.35, 0.95, 0.85], [0.05, 0.50, 0.60], [0.02, 0.25, 0.35]]
+        case .magenta: [[0.85, 0.10, 0.55], [1.00, 0.35, 0.75], [0.55, 0.10, 0.75], [0.30, 0.03, 0.30]]
+        case .forest: [[0.20, 0.65, 0.15], [0.55, 0.90, 0.35], [0.10, 0.45, 0.25], [0.03, 0.20, 0.06]]
+        case .violet: Palette.dusk
+        case .auto, .custom: nil
+        }
+    }
+
+    func rgb(at date: Date, custom: String) -> [Palette.RGB] {
+        if let preset { return preset }
+        if self == .auto { return Palette.at(date) }
+        let c = Self.parse(custom)
+        return [c[0], c[1], (c[1] + c[2]) / 2, c[2]]
+    }
+
+    func colors(at date: Date, custom: String) -> [Color] {
+        rgb(at: date, custom: custom).map { Color(red: $0.x, green: $0.y, blue: $0.z) }
+    }
+
+    static func parse(_ s: String) -> [Palette.RGB] {
+        let parts = s.split(separator: ";").map { $0.split(separator: ",").compactMap { Double($0) } }
+        guard parts.count == 3, parts.allSatisfy({ $0.count == 3 }) else { return parse(defaultCustom) }
+        return parts.map { Palette.RGB($0[0], $0[1], $0[2]) }
+    }
+}
+
+struct ThemeView: View {
+    @AppStorage(Theme.key) private var theme = Theme.auto
+    @AppStorage(Theme.customKey) private var custom = Theme.defaultCustom
+
+    var body: some View {
+        VStack(spacing: 22) {
+            Text("Theme").font(.title3.weight(.light))
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 14) {
+                    ForEach(Theme.allCases.filter { $0 != .custom }, id: \.self) { swatch($0) }
+                }
+                .padding(.horizontal, 20)
+                .padding(.vertical, 4)
+            }
+            Text("Custom").font(.caption).opacity(0.7)
+            HStack(spacing: 34) {
+                colorDot("Top", 0)
+                colorDot("Glow", 1)
+                colorDot("Bottom", 2)
+            }
+        }
+        .foregroundStyle(.white)
+        .padding(.vertical, 24)
+        .presentationDetents([.height(320)])
+        .presentationBackground(.black.opacity(0.55))
+    }
+
+    private func swatch(_ t: Theme) -> some View {
+        let c = t.colors(at: .now, custom: custom)
+        return Circle()
+            .fill(LinearGradient(colors: [c[0], c[1], c[3]], startPoint: .top, endPoint: .bottom))
+            .frame(width: 56, height: 56)
+            .overlay { if t == .auto { Image(systemName: "clock").font(.footnote) } }
+            .overlay(Circle().stroke(.white, lineWidth: theme == t ? 2.5 : 0.5).padding(-4))
+            .onTapGesture { theme = t }
+    }
+
+    private func colorDot(_ title: String, _ index: Int) -> some View {
+        let binding = Binding<Color>(
+            get: {
+                let c = Theme.parse(custom)[index]
+                return Color(red: c.x, green: c.y, blue: c.z)
+            },
+            set: { color in
+                var r: CGFloat = 0, g: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 0
+                UIColor(color).getRed(&r, green: &g, blue: &b, alpha: &a)
+                var parts = Theme.parse(custom)
+                parts[index] = Palette.RGB(Double(r), Double(g), Double(b))
+                custom = parts.map { "\($0.x),\($0.y),\($0.z)" }.joined(separator: ";")
+                theme = .custom
+            })
+        return VStack(spacing: 8) {
+            ColorPicker(title, selection: binding, supportsOpacity: false)
+                .labelsHidden()
+                .scaleEffect(1.6)
+                .frame(width: 48, height: 48)
+            Text(title).font(.caption2).opacity(0.7)
+        }
+    }
+}
+
+// Faked frosted glass: a translucent fill and a lit edge, no backdrop blur, so it costs almost nothing to draw.
+struct Frost<S: Shape>: ViewModifier {
+    let shape: S
+
+    func body(content: Content) -> some View {
+        content
+            .background(shape.fill(LinearGradient(colors: [.white.opacity(0.2), .white.opacity(0.06)], startPoint: .topLeading, endPoint: .bottomTrailing)))
+            .overlay(shape.stroke(LinearGradient(colors: [.white.opacity(0.5), .white.opacity(0.08)], startPoint: .topLeading, endPoint: .bottomTrailing), lineWidth: 1))
+    }
+}
+
+extension View {
+    func frost<S: Shape>(_ shape: S, interactive: Bool = false) -> some View {
+        modifier(Frost(shape: shape))
+    }
+}
+
+@MainActor @Observable
+final class Touch {
+    static let shared = Touch()
+    var pop: (point: CGPoint, time: Date)?
+}

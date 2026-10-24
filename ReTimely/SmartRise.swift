@@ -6,6 +6,9 @@ import AVFoundation
 @MainActor
 final class SmartRise {
     static let shared = SmartRise()
+    static let lead: TimeInterval = 30 * 60
+    static let level = 0.25
+    static let riseSeconds = 75.0
 
     private var plans: [Plan] = []
     private var target: (fire: Date, sound: String)?
@@ -15,10 +18,10 @@ final class SmartRise {
 
     // Timely mapped a 0...1 level to gain with (10^x - 1) / 9 and divided out the stream volume
     // so the result sounds the same at any system volume.
-    static func gain(level: Double, compensate: Bool) -> Float {
+    static func gain(level: Double) -> Float {
         var g = (pow(10, level) - 1) / 9
         let v = Double(AVAudioSession.sharedInstance().outputVolume)
-        if compensate && v > 0 && v < 1 { g /= (pow(10, v) - 1) / 9 }
+        if v > 0 && v < 1 { g /= (pow(10, v) - 1) / 9 }
         return Float(min(1, max(0, g)))
     }
 
@@ -43,8 +46,7 @@ final class SmartRise {
 
     private func tick() {
         guard let target, let player else { return }
-        let s = UserDefaults.standard
-        let lead = s.double(forKey: Settings.leadMinutes) * 60
+        let lead = Self.lead
         let left = target.fire.timeIntervalSinceNow
         guard left <= lead else { return }
         if !rising {
@@ -60,9 +62,8 @@ final class SmartRise {
             }
             return
         }
-        let peak = s.double(forKey: Settings.level)
-        let level = min(peak, (lead - left) / max(1, s.double(forKey: Settings.riseSeconds)) * peak)
-        player.volume = Self.gain(level: level, compensate: s.bool(forKey: Settings.compensate))
+        let level = min(Self.level, (lead - left) / Self.riseSeconds * Self.level)
+        player.volume = Self.gain(level: level)
     }
 
     private func stop() {

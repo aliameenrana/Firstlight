@@ -8,9 +8,7 @@ struct ContentView: View {
     @State private var page = ProcessInfo.processInfo.arguments.contains("-alarms") ? 1 : 0
     @State private var editing: WakeAlarm?
     @State private var placing = false
-    @State private var showSettings = false
-    @AppStorage(Settings.pop) private var popOn = true
-    @AppStorage(Settings.flee) private var fleeOn = true
+    @State private var showTheme = false
 
     var body: some View {
         ZStack {
@@ -31,8 +29,8 @@ struct ContentView: View {
                         }
                         .frost(.capsule)
                         HStack {
-                            Button { showSettings = true } label: {
-                                Image(systemName: "slider.horizontal.3")
+                            Button { showTheme = true } label: {
+                                Image(systemName: "paintpalette")
                                     .font(.system(size: 16, weight: .light))
                                     .foregroundStyle(.white)
                                     .frame(width: 44, height: 44)
@@ -64,19 +62,8 @@ struct ContentView: View {
                     .transition(.scale(scale: 0.9).combined(with: .opacity))
             }
         }
-        .simultaneousGesture(DragGesture(minimumDistance: 0, coordinateSpace: .global)
-            .onChanged { value in
-                guard fleeOn else { return }
-                Touch.shared.point = value.location
-                Touch.shared.active = true
-            }
-            .onEnded { value in
-                Touch.shared.active = false
-                if popOn && hypot(value.translation.width, value.translation.height) < 10 {
-                    Touch.shared.pop = (value.location, .now)
-                }
-            })
-        .sheet(isPresented: $showSettings) { SettingsView() }
+        .simultaneousGesture(SpatialTapGesture(coordinateSpace: .global).onEnded { Touch.shared.pop = ($0.location, .now) })
+        .sheet(isPresented: $showTheme) { ThemeView() }
         .animation(.easeInOut(duration: 0.35), value: page)
         .task { sync() }
         .onChange(of: phase) { sync() }
