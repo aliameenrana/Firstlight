@@ -36,7 +36,7 @@ enum Scheduler {
             let time = Alarm.Schedule.Relative.Time(hour: a.hour, minute: a.minute)
             let repeats: Alarm.Schedule.Relative.Recurrence = a.days.isEmpty ? .never : .weekly(a.days.map { weekdays[$0 - 1] })
             let alert = AlarmPresentation.Alert(
-                title: LocalizedStringResource(stringLiteral: a.label.isEmpty ? "ReTimely" : a.label),
+                title: LocalizedStringResource(stringLiteral: a.label.isEmpty ? "Firstlight" : a.label),
                 stopButton: AlarmButton(text: "Stop", textColor: .white, systemImageName: "sun.max"))
             let attributes = AlarmAttributes<AlarmMeta>(presentation: AlarmPresentation(alert: alert), tintColor: .cyan)
             let config = AlarmManager.AlarmConfiguration<AlarmMeta>(

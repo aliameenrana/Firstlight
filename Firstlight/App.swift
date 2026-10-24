@@ -2,7 +2,7 @@ import SwiftUI
 import SwiftData
 
 @main
-struct ReTimelyApp: App {
+struct FirstlightApp: App {
     init() {
         SmartRiseKey.register()
         SmartRiseNotice.shared.register()

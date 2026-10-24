@@ -5,7 +5,7 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
-	<string>ReTimely</string>
+	<string>Firstlight</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -21,7 +21,7 @@
 	<key>CFBundleVersion</key>
 	<string>1</string>
 	<key>NSAlarmKitUsageDescription</key>
-	<string>ReTimely schedules your alarms.</string>
+	<string>Firstlight schedules your alarms.</string>
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>audio</string>
