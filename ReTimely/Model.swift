@@ -36,3 +36,20 @@ enum Sounds {
     static var smart: [String] { all.filter { $0.hasPrefix("Smart") } }
     static var alarm: [String] { all.filter { !$0.hasPrefix("Smart") } }
 }
+
+extension WakeAlarm {
+    var minutes: Int { hour * 60 + minute }
+
+    func setMinutes(_ m: Int) {
+        hour = m / 60
+        minute = m % 60
+    }
+
+    var summary: String {
+        let symbols = Calendar.current.shortWeekdaySymbols
+        let days = days.isEmpty ? "Once" : days.sorted().map { symbols[$0 - 1] }.joined(separator: " ")
+        return [label, days, smartRise ? "Smart Rise" : ""].filter { !$0.isEmpty }.joined(separator: " · ")
+    }
+}
+
+func clockString(_ m: Int) -> String { String(format: "%02d:%02d", m / 60, m % 60) }

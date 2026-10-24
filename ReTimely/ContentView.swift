@@ -5,38 +5,64 @@ struct ContentView: View {
     @Environment(\.modelContext) private var context
     @Environment(\.scenePhase) private var phase
     @Query(sort: [SortDescriptor(\WakeAlarm.hour), SortDescriptor(\WakeAlarm.minute)]) private var alarms: [WakeAlarm]
+    @State private var page = ProcessInfo.processInfo.arguments.contains("-alarms") ? 1 : 0
     @State private var editing: WakeAlarm?
 
     var body: some View {
         ZStack {
             DreamyBackground()
-            ScrollView {
-                VStack(spacing: 14) {
-                    ClockFace().padding(.vertical, 48)
-                    ForEach(alarms) { alarm in
-                        AlarmCard(alarm: alarm, onChange: sync)
-                            .onTapGesture { editing = alarm }
-                    }
-                }
-                .padding(.horizontal, 16)
-                .padding(.bottom, 120)
+            if page == 0 {
+                ClockPage(next: alarms.filter(\.enabled).compactMap { $0.plan.nextFire() }.min())
+                    .transition(.opacity)
+            } else {
+                TimelineScreen(alarms: alarms, onCreate: create, onEdit: open, onChange: sync)
+                    .transition(.opacity)
             }
             VStack {
-                Spacer()
-                Button {
-                    let alarm = WakeAlarm()
-                    context.insert(alarm)
-                    editing = alarm
-                } label: {
-                    Image(systemName: "plus").font(.title2.weight(.light)).foregroundStyle(.white).frame(width: 64, height: 64)
+                HStack(spacing: 0) {
+                    tab(0, "clock")
+                    tab(1, "alarm")
                 }
-                .glassEffect(.clear.interactive(), in: .circle)
-                .padding(.bottom, 24)
+                .glassEffect(.clear, in: .capsule)
+                Spacer()
+            }
+            if let editing {
+                Color.black.opacity(0.25).ignoresSafeArea()
+                    .onTapGesture(perform: close)
+                    .transition(.opacity)
+                EditorCard(alarm: editing, onDelete: { context.delete(editing); close() }, onDone: close)
+                    .transition(.scale(scale: 0.9).combined(with: .opacity))
             }
         }
-        .fullScreenCover(item: $editing, onDismiss: sync) { AlarmEditor(alarm: $0) }
+        .animation(.easeInOut(duration: 0.35), value: page)
         .task { sync() }
         .onChange(of: phase) { sync() }
+    }
+
+    private func tab(_ index: Int, _ icon: String) -> some View {
+        Button { page = index } label: {
+            Image(systemName: icon)
+                .font(.system(size: 17, weight: .light))
+                .foregroundStyle(.white.opacity(page == index ? 1 : 0.45))
+                .frame(width: 58, height: 40)
+        }
+    }
+
+    private func create(_ minutes: Int) {
+        let alarm = WakeAlarm()
+        alarm.setMinutes(minutes)
+        context.insert(alarm)
+        open(alarm)
+    }
+
+    private func open(_ alarm: WakeAlarm) {
+        withAnimation(.spring(duration: 0.45, bounce: 0.25)) { editing = alarm }
+    }
+
+    private func close() {
+        Preview.stop()
+        withAnimation(.spring(duration: 0.4)) { editing = nil }
+        sync()
     }
 
     private func sync() {
@@ -46,52 +72,39 @@ struct ContentView: View {
     }
 }
 
-struct ClockFace: View {
+struct ClockPage: View {
+    let next: Date?
+
     var body: some View {
-        TimelineView(.periodic(from: .now, by: 1)) { context in
-            VStack(spacing: 6) {
-                HStack(alignment: .firstTextBaseline, spacing: 4) {
-                    Text(context.date, format: .dateTime.hour(.twoDigits(amPM: .omitted)).minute(.twoDigits))
-                        .font(.system(size: 100, weight: .ultraLight))
-                    Text(context.date, format: .dateTime.second(.twoDigits))
-                        .font(.system(size: 30, weight: .thin))
+        VStack(spacing: 22) {
+            Spacer()
+            TimelineView(.periodic(from: .now, by: 1)) { context in
+                VStack(spacing: 4) {
+                    HStack(alignment: .firstTextBaseline, spacing: 4) {
+                        Text(context.date, format: .dateTime.hour(.twoDigits(amPM: .omitted)).minute(.twoDigits))
+                            .font(.system(size: 112, weight: .ultraLight))
+                        Text(context.date, format: .dateTime.second(.twoDigits))
+                            .font(.system(size: 32, weight: .thin))
+                    }
+                    .monospacedDigit()
+                    .contentTransition(.numericText())
+                    .animation(.spring(duration: 0.4), value: context.date)
+                    Text(context.date, format: .dateTime.weekday(.wide).month().day())
+                        .font(.title3.weight(.light))
+                        .opacity(0.85)
                 }
-                .monospacedDigit()
-                .contentTransition(.numericText())
-                .animation(.spring(duration: 0.4), value: context.date)
-                Text(context.date, format: .dateTime.weekday(.wide).month().day())
-                    .font(.title3.weight(.light))
-                    .opacity(0.8)
             }
-            .foregroundStyle(.white)
-            .shadow(color: .black.opacity(0.15), radius: 12)
-        }
-    }
-}
-
-struct AlarmCard: View {
-    @Bindable var alarm: WakeAlarm
-    var onChange: () -> Void
-
-    var body: some View {
-        HStack {
-            VStack(alignment: .leading, spacing: 4) {
-                Text(String(format: "%02d:%02d", alarm.hour, alarm.minute)).font(.system(size: 46, weight: .thin))
-                Text(subtitle).font(.footnote).opacity(0.75)
+            if let next {
+                Label { Text(next, format: .dateTime.weekday(.abbreviated).hour().minute()) } icon: { Image(systemName: "alarm") }
+                    .font(.footnote.weight(.light))
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 7)
+                    .glassEffect(.clear, in: .capsule)
             }
             Spacer()
-            Toggle("", isOn: $alarm.enabled).labelsHidden().tint(.white.opacity(0.4))
+            Spacer()
         }
         .foregroundStyle(.white)
-        .padding(20)
-        .glassEffect(.clear, in: .rect(cornerRadius: 26))
-        .opacity(alarm.enabled ? 1 : 0.6)
-        .onChange(of: alarm.enabled) { onChange() }
-    }
-
-    private var subtitle: String {
-        let symbols = Calendar.current.shortWeekdaySymbols
-        let days = alarm.days.isEmpty ? "Once" : alarm.days.sorted().map { symbols[$0 - 1] }.joined(separator: " ")
-        return [alarm.label, days, alarm.smartRise ? "Smart Rise" : nil].compactMap { $0?.isEmpty == false ? $0 : nil }.joined(separator: " · ")
+        .shadow(color: .black.opacity(0.12), radius: 14)
     }
 }

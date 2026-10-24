@@ -18,13 +18,13 @@ struct DreamyBackground: View {
     }
 }
 
-// Colors drift with the time of day: deep night, golden dawn, aqua day, violet dusk.
+// Colors drift with the time of day: deep blue night, rose dawn, amber day, violet dusk.
 enum Palette {
     typealias RGB = SIMD3<Double>
-    private static let night: [RGB] = [[0.05, 0.07, 0.26], [0.42, 0.20, 0.72], [0.08, 0.42, 0.70], [0.01, 0.01, 0.08]]
-    private static let dawn: [RGB] = [[0.98, 0.84, 0.16], [1.00, 0.55, 0.18], [0.95, 0.35, 0.45], [0.68, 0.10, 0.08]]
-    private static let day: [RGB] = [[0.08, 0.86, 0.86], [0.14, 0.55, 0.96], [0.36, 0.88, 0.78], [0.04, 0.14, 0.56]]
-    private static let dusk: [RGB] = [[0.58, 0.26, 0.78], [0.96, 0.42, 0.46], [0.30, 0.20, 0.72], [0.10, 0.04, 0.30]]
+    private static let night: [RGB] = [[0.02, 0.30, 0.50], [0.10, 0.80, 0.80], [0.40, 0.30, 0.90], [0.01, 0.04, 0.22]]
+    private static let dawn: [RGB] = [[0.98, 0.70, 0.36], [1.00, 0.86, 0.55], [0.92, 0.40, 0.56], [0.45, 0.12, 0.36]]
+    private static let day: [RGB] = [[1.00, 0.66, 0.08], [1.00, 0.88, 0.40], [0.98, 0.32, 0.18], [0.60, 0.06, 0.05]]
+    private static let dusk: [RGB] = [[0.62, 0.22, 0.70], [1.00, 0.48, 0.52], [0.25, 0.32, 0.88], [0.08, 0.04, 0.28]]
     private static let keys: [(Double, [RGB])] = [(0, night), (5, night), (7, dawn), (10, day), (16, day), (19, dusk), (21.5, night), (24, night)]
 
     static func at(_ date: Date) -> [Color] {
