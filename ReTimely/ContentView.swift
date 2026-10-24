@@ -30,7 +30,7 @@ struct ContentView: View {
                         .frost(.capsule)
                         HStack {
                             Button { showTheme = true } label: {
-                                Image(systemName: "paintpalette")
+                                Image(systemName: "slider.horizontal.3")
                                     .font(.system(size: 16, weight: .light))
                                     .foregroundStyle(.white)
                                     .frame(width: 44, height: 44)

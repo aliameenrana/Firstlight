@@ -1,6 +1,6 @@
 import AVFoundation
 
-// Mirrors Timely 1.3: the alarm's own sound fades from silence to a fixed level, then holds until the alarm.
+// Mirrors Timely 1.3's curve: one Smart Rise sound, chosen in settings, fades from silence to a fixed level, then holds until the alarm.
 // iOS cannot start audio from a suspended app, so the sound loops at zero volume from the moment the app is
 // backgrounded; that keeps the process alive until the window opens.
 @MainActor
@@ -28,7 +28,7 @@ final class SmartRise {
         target = plans.filter(\.active)
             .compactMap { p in p.nextFire().map { (fire: $0, sound: p.sound) } }
             .min { $0.fire < $1.fire }
-        guard let target, let url = Bundle.main.url(forResource: target.sound, withExtension: "caf") else { return }
+        guard target != nil, let url = Bundle.main.url(forResource: UserDefaults.standard.string(forKey: SmartRiseKey.sound) ?? "Smart1", withExtension: "caf") else { return }
         let session = AVAudioSession.sharedInstance()
         try? session.setCategory(.playback, options: [.mixWithOthers])
         try? session.setActive(true)

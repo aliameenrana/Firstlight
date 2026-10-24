@@ -128,10 +128,11 @@ enum SmartRiseKey {
     static let level = "smartRiseLevel"
     static let rise = "smartRiseSeconds"
     static let compensate = "smartRiseCompensate"
+    static let sound = "smartRiseSound"
 
     // Defaults are Timely 1.3's own constants.
     static func register() {
-        UserDefaults.standard.register(defaults: [lead: 30.0, level: 0.25, rise: 75.0, compensate: true])
+        UserDefaults.standard.register(defaults: [lead: 30.0, level: 0.25, rise: 75.0, compensate: true, sound: "Smart1"])
     }
 }
 
@@ -140,7 +141,7 @@ struct SmartRiseSettings: View {
     @AppStorage(SmartRiseKey.level) private var level = 0.25
     @AppStorage(SmartRiseKey.rise) private var rise = 75.0
     @AppStorage(SmartRiseKey.compensate) private var compensate = true
-    @State private var sound = "Smart1"
+    @AppStorage(SmartRiseKey.sound) private var sound = "Smart1"
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
@@ -161,7 +162,7 @@ struct SmartRiseSettings: View {
                 Button("Play at this level") { Preview.play(sound, volume: SmartRise.gain(level: level, compensate: compensate)) }
             }
             Button("Restore Timely's values") {
-                for key in [SmartRiseKey.lead, SmartRiseKey.level, SmartRiseKey.rise, SmartRiseKey.compensate] {
+                for key in [SmartRiseKey.lead, SmartRiseKey.level, SmartRiseKey.rise, SmartRiseKey.compensate, SmartRiseKey.sound] {
                     UserDefaults.standard.removeObject(forKey: key)
                 }
             }

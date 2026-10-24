@@ -201,7 +201,7 @@ struct EditorCard: View {
             Toggle(isOn: $alarm.smartRise) {
                 VStack(alignment: .leading, spacing: 2) {
                     Text("Smart Rise")
-                    Text("The alarm sound plays faintly before the alarm, as in Timely.")
+                    Text("A faint sound plays before the alarm. Choose it in settings.")
                         .font(.caption).opacity(0.65)
                 }
             }
