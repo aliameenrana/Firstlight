@@ -35,21 +35,29 @@ static float bubble(float2 id, float2 g, int i, thread float &alpha, float t) {
     col = mix(col, float3(glowA.rgb), 0.45 * exp(-dot(q - a, q - a) * 4.0));
     col = mix(col, float3(glowB.rgb), 0.45 * exp(-dot(q - b, q - b) * 3.0));
 
-    // Northern lights faked with layered sines instead of noise; nothing is visible below 0.85.
-    if (uv.y < 0.85) {
+    // Northern lights faked with layered sines instead of noise.
+    if (uv.y < 0.95) {
         float3 aurora = float3(0.0);
         for (int i = 0; i < 3; i++) {
             float fi = float(i);
             float x = q.x * 1.2 + fi * 1.9;
             float line = 0.18 + 0.11 * fi + 0.07 * sin(x * 1.7 + t * (0.08 + 0.03 * fi)) + 0.03 * sin(x * 4.3 - t * 0.11 + fi);
             float dy = uv.y - line;
-            float curtain = dy < 0.0 ? exp(-dy * dy * 1400.0) : exp(-dy * (7.0 + fi * 2.0));
+            // Each narrow strip has a 5% chance per ~25 s window of a ray that hangs further down,
+            // easing in and out over the window so it never pops.
+            float strip = floor(x * 9.0);
+            float phase = t * 0.04 + hash21(float2(strip, fi));
+            float spike = hash21(float2(strip, floor(phase) + fi * 7.0)) > 0.95
+                ? sin(3.14159 * fract(phase)) * smoothstep(0.5, 0.15, abs(fract(x * 9.0) - 0.5)) : 0.0;
+            float fall = (7.0 + fi * 2.0) * (1.0 - 0.45 * spike);
+            float curtain = dy < 0.0 ? exp(-dy * dy * 1400.0) : exp(-dy * fall);
             float rays = 0.6 + 0.4 * sin(x * 13.0 + 2.0 * sin(x * 3.1 + t * 0.2 + fi)) * sin(x * 7.3 - t * 0.13 + fi * 1.3);
+            rays *= 0.9 + 0.2 * hash21(float2(floor(x * 60.0), fi));
             float shimmer = 0.7 + 0.3 * sin(x * 2.3 - t * 0.25 + fi * 2.0);
             float3 tint = mix(mix(float3(glowA.rgb), float3(glowB.rgb), saturate(dy * 3.0 + fi * 0.3)), float3(0.85, 1.0, 0.95), 0.45);
             aurora += tint * curtain * rays * shimmer * (0.8 - fi * 0.18);
         }
-        col = 1.0 - (1.0 - col) * (1.0 - saturate(aurora));
+        col = 1.0 - (1.0 - col) * (1.0 - saturate(aurora * smoothstep(0.95, 0.7, uv.y)));
     }
 
     // Which bubble, if any, was under the tap at the moment it happened.
