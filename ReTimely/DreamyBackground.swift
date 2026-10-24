@@ -1,14 +1,13 @@
 import SwiftUI
 
 struct DreamyBackground: View {
-    var palette: [Color]?
     private static let start = Date()
 
     var body: some View {
         // The motion is slow; 30 fps is indistinguishable from 120 and quarters the GPU work on ProMotion.
         TimelineView(.animation(minimumInterval: 1.0 / 30)) { context in
             let t = Float(context.date.timeIntervalSince(Self.start))
-            let p = palette ?? Palette.at(context.date)
+            let p = Palette.at(context.date)
             GeometryReader { geo in
                 Rectangle()
                     .colorEffect(ShaderLibrary.dreamy(
@@ -23,8 +22,6 @@ struct DreamyBackground: View {
 // Colors drift with the time of day: deep blue night, rose dawn, amber day, violet dusk.
 enum Palette {
     typealias RGB = SIMD3<Double>
-    static let ocean: [Color] = ([[0.04, 0.45, 0.85], [0.20, 0.75, 1.00], [0.25, 0.30, 0.95], [0.02, 0.06, 0.35]] as [RGB])
-        .map { Color(red: $0.x, green: $0.y, blue: $0.z) }
     private static let night: [RGB] = [[0.02, 0.30, 0.50], [0.10, 0.80, 0.80], [0.40, 0.30, 0.90], [0.01, 0.04, 0.22]]
     private static let dawn: [RGB] = [[0.98, 0.70, 0.36], [1.00, 0.86, 0.55], [0.92, 0.40, 0.56], [0.45, 0.12, 0.36]]
     private static let day: [RGB] = [[1.00, 0.66, 0.08], [1.00, 0.88, 0.40], [0.98, 0.32, 0.18], [0.60, 0.06, 0.05]]

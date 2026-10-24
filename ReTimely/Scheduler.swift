@@ -15,14 +15,11 @@ enum Scheduler {
             let repeats: Alarm.Schedule.Relative.Recurrence = a.days.isEmpty ? .never : .weekly(a.days.map { weekdays[$0 - 1] })
             let alert = AlarmPresentation.Alert(
                 title: LocalizedStringResource(stringLiteral: a.label.isEmpty ? "ReTimely" : a.label),
-                stopButton: AlarmButton(text: "Stop", textColor: .white, systemImageName: "stop.fill"),
-                secondaryButton: AlarmButton(text: "Open", textColor: .white, systemImageName: "sun.max"),
-                secondaryButtonBehavior: .custom)
+                stopButton: AlarmButton(text: "Stop", textColor: .white, systemImageName: "sun.max"))
             let attributes = AlarmAttributes<AlarmMeta>(presentation: AlarmPresentation(alert: alert), tintColor: .cyan)
             let config = AlarmManager.AlarmConfiguration<AlarmMeta>(
                 schedule: .relative(.init(time: time, repeats: repeats)),
                 attributes: attributes,
-                secondaryIntent: OpenRingingIntent(alarmID: a.id, sound: a.sound),
                 sound: .named("\(a.sound).caf"))
             _ = try? await manager.schedule(id: a.id, configuration: config)
         }
