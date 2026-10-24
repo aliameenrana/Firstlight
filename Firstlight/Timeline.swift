@@ -50,15 +50,16 @@ struct TimelineScreen: View {
                 ZStack(alignment: .topLeading) {
                 ForEach(alarms) { alarm in
                     AlarmLine(alarm: alarm, onChange: onChange)
-                        .offset(x: 74, y: toY(alarm.minutes) - 26)
                         .opacity(editing != nil || placing ? 0 : 1)
                         .allowsHitTesting(!placing)
                         .animation(.easeInOut(duration: 0.25), value: placing || editing != nil)
                         .onTapGesture { onEdit(alarm) }
+                        .contentShape(.contextMenuPreview, Capsule())
                         .contextMenu {
                             Button("Edit", systemImage: "pencil") { onEdit(alarm) }
                             Button("Delete", systemImage: "trash", role: .destructive) { onDelete(alarm) }
                         }
+                        .offset(x: 74, y: toY(alarm.minutes) - 26)
                         .gesture(DragGesture(minimumDistance: 10, coordinateSpace: .named("timeline"))
                             .onChanged { value in
                                 let m = toMinutes(value.location.y)
