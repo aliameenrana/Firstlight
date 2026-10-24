@@ -1,7 +1,7 @@
 import SwiftUI
 
 enum Theme: String, CaseIterable {
-    case auto, amber, ocean, teal, magenta, forest, violet, custom
+    case ocean, amber, auto, teal, magenta, forest, violet, custom
 
     static let key = "theme"
     static let customKey = "customColors"
@@ -39,7 +39,7 @@ enum Theme: String, CaseIterable {
 
 struct ThemeView: View {
     @Environment(\.dismiss) private var dismiss
-    @AppStorage(Theme.key) private var theme = Theme.auto
+    @AppStorage(Theme.key) private var theme = Theme.ocean
     @AppStorage(Theme.customKey) private var custom = Theme.defaultCustom
 
     var body: some View {

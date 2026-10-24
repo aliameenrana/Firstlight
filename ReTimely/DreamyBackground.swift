@@ -3,7 +3,7 @@ import SwiftUI
 struct DreamyBackground: View {
     private static let start = Date()
     private static let downscale: CGFloat = 3
-    @AppStorage(Theme.key) private var theme = Theme.auto
+    @AppStorage(Theme.key) private var theme = Theme.ocean
     @AppStorage(Theme.customKey) private var custom = Theme.defaultCustom
     private let touch = Touch.shared
 
