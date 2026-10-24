@@ -20,7 +20,7 @@ struct ContentView: View {
                 TimelineScreen(alarms: alarms, placing: $placing, onCreate: create, onEdit: open, onChange: sync)
                     .transition(.opacity)
             }
-            GlassEffectContainer {
+            Group {
                 VStack {
                     ZStack {
                         HStack(spacing: 0) {
@@ -139,6 +139,5 @@ struct ClockPage: View {
             Spacer()
         }
         .foregroundStyle(.white)
-        .shadow(color: .black.opacity(0.12), radius: 14)
     }
 }

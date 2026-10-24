@@ -44,7 +44,7 @@ struct TimelineScreen: View {
                 Ruler(bulge: bulge, focus: focus, top: top, height: height)
                     .allowsHitTesting(false)
 
-                GlassEffectContainer {
+                Group {
                 ZStack(alignment: .topLeading) {
                 ForEach(alarms) { alarm in
                     AlarmLine(alarm: alarm, onChange: onChange)

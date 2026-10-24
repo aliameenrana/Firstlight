@@ -2,6 +2,7 @@ import SwiftUI
 
 struct DreamyBackground: View {
     private static let start = Date()
+    private static let downscale: CGFloat = 3
     @AppStorage(Theme.key) private var theme = Theme.auto
     @AppStorage(Theme.customKey) private var custom = Theme.defaultCustom
     private let touch = Touch.shared
@@ -12,12 +13,18 @@ struct DreamyBackground: View {
             let t = Float(context.date.timeIntervalSince(Self.start))
             let p = theme.colors(at: context.date, custom: custom)
             GeometryReader { geo in
+                // Everything here is soft, so the shader runs on a third-size view that is then scaled up:
+                // 9x fewer pixels to shade. drawingGroup flattens it first so the scale stretches a texture.
+                let small = CGSize(width: geo.size.width / Self.downscale, height: geo.size.height / Self.downscale)
                 Rectangle()
                     .colorEffect(ShaderLibrary.dreamy(
-                        .float2(geo.size), .float(t),
+                        .float2(small), .float(t),
                         .color(p[0]), .color(p[1]), .color(p[2]), .color(p[3]),
                         .float4(Float((touch.pop?.point.x ?? 0) / geo.size.width), Float((touch.pop?.point.y ?? 0) / geo.size.height),
                                 touch.pop.map { Float($0.time.timeIntervalSince(Self.start)) } ?? -100, 0)))
+                    .frame(width: small.width, height: small.height)
+                    .drawingGroup(opaque: true)
+                    .scaleEffect(Self.downscale, anchor: .topLeading)
             }
         }
         .ignoresSafeArea()
