@@ -12,6 +12,9 @@ final class SmartRise {
     private var player: AVAudioPlayer?
     private var timer: Timer?
     private var rising = false
+    private var sessionReady = false
+    // Bumped on every arm so a late session callback cannot start a stale player.
+    private var generation = 0
 
     // Timely mapped a 0...1 level to gain with (10^x - 1) / 9 and divided out the stream volume
     // so the result sounds the same at any system volume.
@@ -29,15 +32,33 @@ final class SmartRise {
             .compactMap { p in p.nextFire().map { (fire: $0, sound: p.sound) } }
             .min { $0.fire < $1.fire }
         guard target != nil, let url = Bundle.main.url(forResource: UserDefaults.standard.string(forKey: SmartRiseKey.sound) ?? "Smart1", withExtension: "caf") else { return }
-        let session = AVAudioSession.sharedInstance()
-        try? session.setCategory(.playback, options: [.mixWithOthers])
-        try? session.setActive(true)
-        player = try? AVAudioPlayer(contentsOf: url)
-        player?.numberOfLoops = -1
-        player?.volume = 0
-        player?.play()
-        timer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { [weak self] _ in
-            MainActor.assumeIsolated { self?.tick() }
+        generation += 1
+        let current = generation
+        withSession { [weak self] in
+            guard let self, current == self.generation else { return }
+            self.player = try? AVAudioPlayer(contentsOf: url)
+            self.player?.numberOfLoops = -1
+            self.player?.volume = 0
+            self.player?.play()
+            self.timer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { [weak self] _ in
+                MainActor.assumeIsolated { self?.tick() }
+            }
+        }
+    }
+
+    // setActive can block for tens of milliseconds, so it runs once, off the main thread.
+    private func withSession(_ body: @escaping @MainActor () -> Void) {
+        if sessionReady { body(); return }
+        DispatchQueue.global(qos: .userInitiated).async {
+            let session = AVAudioSession.sharedInstance()
+            try? session.setCategory(.playback, options: [.mixWithOthers])
+            try? session.setActive(true)
+            DispatchQueue.main.async {
+                MainActor.assumeIsolated {
+                    SmartRise.shared.sessionReady = true
+                    body()
+                }
+            }
         }
     }
 
