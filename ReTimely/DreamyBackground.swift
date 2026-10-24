@@ -5,13 +5,15 @@ struct DreamyBackground: View {
     private static let downscale: CGFloat = 3
     @AppStorage(Theme.key) private var theme = Theme.ocean
     @AppStorage(Theme.customKey) private var custom = Theme.defaultCustom
+    @AppStorage(Theme.cycleKey) private var cycle = false
+    @AppStorage(Theme.cycleMinutesKey) private var cycleMinutes = 10.0
     private let touch = Touch.shared
 
     var body: some View {
         // The motion is slow; 30 fps is indistinguishable from 120 and quarters the GPU work on ProMotion.
         TimelineView(.animation(minimumInterval: 1.0 / 30)) { context in
             let t = Float(context.date.timeIntervalSince(Self.start))
-            let p = theme.colors(at: context.date, custom: custom)
+            let p = theme.colors(at: context.date, custom: custom, cycleMinutes: cycle ? cycleMinutes : nil)
             GeometryReader { geo in
                 // Everything here is soft, so the shader runs on a third-size view that is then scaled up:
                 // 9x fewer pixels to shade. drawingGroup flattens it first so the scale stretches a texture.
