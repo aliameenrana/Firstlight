@@ -3,6 +3,8 @@ import SwiftData
 
 @main
 struct ReTimelyApp: App {
+    init() { SmartRiseKey.register() }
+
     var body: some Scene {
         WindowGroup {
             ContentView().preferredColorScheme(.dark)

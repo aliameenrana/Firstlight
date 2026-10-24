@@ -57,10 +57,12 @@ struct ThemeView: View {
                 colorDot("Glow", 1)
                 colorDot("Bottom", 2)
             }
+            SmartRiseSettings()
         }
         .foregroundStyle(.white)
         .padding(.vertical, 24)
-        .presentationDetents([.height(320)])
+        .presentationDetents([.height(320), .large])
+        .presentationDragIndicator(.visible)
         .presentationBackground(.black.opacity(0.55))
     }
 
@@ -119,4 +121,56 @@ extension View {
 final class Touch {
     static let shared = Touch()
     var pop: (point: CGPoint, time: Date)?
+}
+
+enum SmartRiseKey {
+    static let lead = "smartRiseLead"
+    static let level = "smartRiseLevel"
+    static let rise = "smartRiseSeconds"
+    static let compensate = "smartRiseCompensate"
+
+    // Defaults are Timely 1.3's own constants.
+    static func register() {
+        UserDefaults.standard.register(defaults: [lead: 30.0, level: 0.25, rise: 75.0, compensate: true])
+    }
+}
+
+struct SmartRiseSettings: View {
+    @AppStorage(SmartRiseKey.lead) private var lead = 30.0
+    @AppStorage(SmartRiseKey.level) private var level = 0.25
+    @AppStorage(SmartRiseKey.rise) private var rise = 75.0
+    @AppStorage(SmartRiseKey.compensate) private var compensate = true
+    @State private var sound = "Smart1"
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            Text("Smart Rise").font(.title3.weight(.light))
+            Stepper("Starts \(Int(lead)) min before", value: $lead, in: 5...60, step: 5)
+            VStack(alignment: .leading) {
+                let g = (pow(10, level) - 1) / 9
+                Text("Level \(level, format: .number.precision(.fractionLength(2))) · \(g * 100, format: .number.precision(.fractionLength(1)))% · \(20 * log10(g), format: .number.precision(.fractionLength(0))) dB")
+                Slider(value: $level, in: 0.05...0.6)
+            }
+            Stepper("Fades in over \(Int(rise)) s", value: $rise, in: 15...900, step: 15)
+            Toggle("Same loudness at any volume", isOn: $compensate)
+            HStack {
+                Picker("Sound", selection: $sound) {
+                    ForEach(Sounds.all, id: \.self) { Text(Sounds.title($0)) }
+                }
+                Spacer()
+                Button("Play at this level") { Preview.play(sound, volume: SmartRise.gain(level: level, compensate: compensate)) }
+            }
+            Button("Restore Timely's values") {
+                for key in [SmartRiseKey.lead, SmartRiseKey.level, SmartRiseKey.rise, SmartRiseKey.compensate] {
+                    UserDefaults.standard.removeObject(forKey: key)
+                }
+            }
+            .font(.footnote)
+        }
+        .tint(.white)
+        .padding(20)
+        .frost(.rect(cornerRadius: 26))
+        .padding(.horizontal, 16)
+        .onDisappear { Preview.stop() }
+    }
 }

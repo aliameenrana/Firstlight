@@ -4,6 +4,19 @@ using namespace metal;
 
 static float hash21(float2 p) { return fract(sin(dot(p, float2(127.1, 311.7))) * 43758.5453); }
 
+static float noise(float2 p) {
+    float2 i = floor(p), f = fract(p);
+    float2 u = f * f * (3.0 - 2.0 * f);
+    return mix(mix(hash21(i), hash21(i + float2(1, 0)), u.x),
+               mix(hash21(i + float2(0, 1)), hash21(i + float2(1, 1)), u.x), u.y);
+}
+
+static float fbm(float2 p) {
+    float v = 0.0, a = 0.5;
+    for (int i = 0; i < 3; i++) { v += a * noise(p); p = p * 2.03 + 17.0; a *= 0.5; }
+    return v;
+}
+
 constant float kScale[4] = { 2.2, 4.6, 7.0, 9.4 };
 constant float kSpeed[4] = { 0.012, 0.010, 0.008, 0.006 };
 
@@ -35,25 +48,25 @@ static float bubble(float2 id, float2 g, int i, thread float &alpha, float t) {
     col = mix(col, float3(glowA.rgb), 0.45 * exp(-dot(q - a, q - a) * 4.0));
     col = mix(col, float3(glowB.rgb), 0.45 * exp(-dot(q - b, q - b) * 3.0));
 
-    // Northern lights faked with layered sines instead of noise.
+    // Northern lights: curtains with a crisp upper edge, a long downward fall-off and noise-driven rays.
     if (uv.y < 0.95) {
         float3 aurora = float3(0.0);
         for (int i = 0; i < 3; i++) {
             float fi = float(i);
             float x = q.x * 1.2 + fi * 1.9;
-            float line = 0.18 + 0.11 * fi + 0.07 * sin(x * 1.7 + t * (0.08 + 0.03 * fi)) + 0.03 * sin(x * 4.3 - t * 0.11 + fi);
+            float line = 0.18 + 0.11 * fi + 0.07 * sin(x * 1.7 + t * (0.08 + 0.03 * fi))
+                       + 0.06 * (noise(float2(x * 1.3, t * 0.04 + fi * 5.0)) - 0.5);
             float dy = uv.y - line;
-            // Each narrow strip has a 5% chance per ~25 s window of a ray that hangs further down,
-            // easing in and out over the window so it never pops.
+            // Each strip has a 5% chance per ~25 s window of a ray that hangs further down,
+            // easing in and out over the window and across the strip so it never pops.
             float strip = floor(x * 9.0);
             float phase = t * 0.04 + hash21(float2(strip, fi));
-            float spike = hash21(float2(strip, floor(phase) + fi * 7.0)) > 0.95
-                ? sin(3.14159 * fract(phase)) * smoothstep(0.5, 0.15, abs(fract(x * 9.0) - 0.5)) : 0.0;
+            float across = sin(3.14159 * fract(x * 9.0));
+            float spike = hash21(float2(strip, floor(phase) + fi * 7.0)) > 0.95 ? sin(3.14159 * fract(phase)) * across * across : 0.0;
             float fall = (7.0 + fi * 2.0) * (1.0 - 0.45 * spike);
             float curtain = dy < 0.0 ? exp(-dy * dy * 1400.0) : exp(-dy * fall);
-            float rays = 0.6 + 0.4 * sin(x * 13.0 + 2.0 * sin(x * 3.1 + t * 0.2 + fi)) * sin(x * 7.3 - t * 0.13 + fi * 1.3);
-            rays *= 0.9 + 0.2 * hash21(float2(floor(x * 60.0), fi));
-            float shimmer = 0.7 + 0.3 * sin(x * 2.3 - t * 0.25 + fi * 2.0);
+            float rays = pow(fbm(float2(x * 7.0, uv.y * 0.8 - t * 0.05 + fi)), 1.6) * 1.8;
+            float shimmer = 0.65 + 0.35 * sin(x * 2.3 - t * 0.25 + fi * 2.0);
             float3 tint = mix(mix(float3(glowA.rgb), float3(glowB.rgb), saturate(dy * 3.0 + fi * 0.3)), float3(0.85, 1.0, 0.95), 0.45);
             aurora += tint * curtain * rays * shimmer * (0.8 - fi * 0.18);
         }
