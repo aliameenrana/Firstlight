@@ -8,7 +8,7 @@ final class WakeAlarm {
     var minute = 0
     var days: [Int] = []
     var label = ""
-    var sound = "Good Morning"
+    var sound = "Past Time"
     var smartRise = false
     var enabled = true
     // When a one-time alarm is due. AlarmKit forgets it after it rings, so the app disables it once this passes.

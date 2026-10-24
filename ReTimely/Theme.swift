@@ -145,7 +145,7 @@ enum SmartRiseKey {
 
     // Defaults are Timely 1.3's own constants.
     static func register() {
-        UserDefaults.standard.register(defaults: [lead: 30.0, level: 0.25, rise: 75.0, compensate: true, sound: "Smart1"])
+        UserDefaults.standard.register(defaults: [lead: 30.0, level: 0.25, rise: 75.0, compensate: true, sound: "Smartnight5"])
     }
 }
 
@@ -154,7 +154,7 @@ struct SmartRiseSettings: View {
     @AppStorage(SmartRiseKey.level) private var level = 0.25
     @AppStorage(SmartRiseKey.rise) private var rise = 75.0
     @AppStorage(SmartRiseKey.compensate) private var compensate = true
-    @AppStorage(SmartRiseKey.sound) private var sound = "Smart1"
+    @AppStorage(SmartRiseKey.sound) private var sound = "Smartnight5"
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {

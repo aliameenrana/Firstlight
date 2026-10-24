@@ -54,7 +54,7 @@ final class SmartRise {
     func arm(_ plans: [Plan]) {
         self.plans = plans
         let next = plans.filter(\.active).compactMap { $0.nextFire() }.min()
-        let sound = UserDefaults.standard.string(forKey: SmartRiseKey.sound) ?? "Smart1"
+        let sound = UserDefaults.standard.string(forKey: SmartRiseKey.sound) ?? "Smartnight5"
         let key = next.map { "\($0.timeIntervalSince1970)|\(sound)" }
         // Arm runs on every app switch; restarting an unchanged, playing session would only cost work and reset the fade.
         if key != nil, key == armedKey, player?.isPlaying == true || stoppedFor == next { return }
