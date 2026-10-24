@@ -229,7 +229,7 @@ struct EditorCard: View {
             .tint(.white.opacity(0.35))
             soundRow("Sound", icon: "music.note", selection: $alarm.sound, options: Sounds.all)
             HStack {
-                Button (action: onDelete) label: { Image(systemName: "trash").font(.body.weight(.light)) }
+                Button(action: onDelete) { Image(systemName: "trash").font(.body.weight(.light)) }
                 Spacer()
                 Button("Done", action: onDone).fontWeight(.medium)
             }
