@@ -108,7 +108,8 @@ static float bubble(float2 id, float2 g, int i, thread float &alpha, float t) {
             float reach = 0.05 + 0.07 * hash21(float2(pop.z, fk));
             float2 p = popQ + float2(cos(ang), sin(ang)) * reach * spread + float2(0.0, 0.04 * age * age);
             float r = 0.006 * fade + 0.001;
-            col += light * 0.7 * fade * (1.0 - smoothstep(r * 0.4, r, length(q - p)));
+            float opacity = 0.02 + 0.02 * hash21(float2(fk, 5.0));
+            col = mix(col, light, opacity * fade * (1.0 - smoothstep(r * 0.4, r, length(q - p))));
         }
     }
 
