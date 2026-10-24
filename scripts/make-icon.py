@@ -24,7 +24,7 @@ def bubble(cx, cy, r, strength):
     spec = np.exp(-((dx + 0.38) ** 2 + (dy + 0.42) ** 2) * 28) + 0.4 * np.exp(-((dx - 0.42) ** 2 + (dy - 0.46) ** 2) * 80)
     return (0.06 * body + 0.6 * rim + 0.9 * spec * body) * strength
 
-glass = bubble(0.5, 0.56, 0.31, 0.8) + bubble(0.20, 0.82, 0.07, 0.5) + bubble(0.84, 0.30, 0.05, 0.45)
+glass = bubble(0.5, 0.5, 0.31, 0.8) + bubble(0.20, 0.82, 0.07, 0.5) + bubble(0.84, 0.30, 0.05, 0.45)
 col = col + glass[..., None] * 0.75
 
 def segment(ax, ay, angle, length, width):
@@ -34,8 +34,8 @@ def segment(ax, ay, angle, length, width):
     dist = np.sqrt((px - vx * h) ** 2 + (py - vy * h) ** 2)
     return np.clip(1 - (dist - width) / 0.0025, 0, 1)
 
-hands = np.maximum(segment(0.5, 0.56, math.radians(305), 0.13, 0.006), segment(0.5, 0.56, math.radians(60), 0.20, 0.004))
-hands = np.maximum(hands, np.clip(1 - (np.sqrt((x - 0.5) ** 2 + (y - 0.56) ** 2) - 0.012) / 0.0025, 0, 1))
+hands = np.maximum(segment(0.5, 0.5, math.radians(305), 0.13, 0.006), segment(0.5, 0.5, math.radians(60), 0.20, 0.004))
+hands = np.maximum(hands, np.clip(1 - (np.sqrt((x - 0.5) ** 2 + (y - 0.5) ** 2) - 0.012) / 0.0025, 0, 1))
 col = col * (1 - hands[..., None] * 0.92) + hands[..., None] * 0.92
 
 col += (np.random.default_rng(1).random((N, N, 1)) - 0.5) * 0.015
