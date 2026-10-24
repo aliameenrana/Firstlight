@@ -4,7 +4,8 @@ struct DreamyBackground: View {
     private static let start = Date()
 
     var body: some View {
-        TimelineView(.animation) { context in
+        // The motion is slow; 30 fps is indistinguishable from 120 and quarters the GPU work on ProMotion.
+        TimelineView(.animation(minimumInterval: 1.0 / 30)) { context in
             let t = Float(context.date.timeIntervalSince(Self.start))
             let p = Palette.at(context.date)
             GeometryReader { geo in

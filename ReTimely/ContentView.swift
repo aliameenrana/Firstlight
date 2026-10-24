@@ -19,7 +19,8 @@ struct ContentView: View {
                 TimelineScreen(alarms: alarms, placing: $placing, onCreate: create, onEdit: open, onChange: sync)
                     .transition(.opacity)
             }
-            VStack {
+            GlassEffectContainer {
+                VStack {
                 HStack(spacing: 0) {
                     tab(0, "clock")
                     tab(1, "alarm")
@@ -38,6 +39,7 @@ struct ContentView: View {
                 }
                 .glassEffect(.clear.interactive(), in: .circle)
                 .padding(.bottom, 20)
+                }
             }
             if let editing {
                 Color.black.opacity(0.25).ignoresSafeArea()

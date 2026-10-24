@@ -13,7 +13,7 @@ static float noise(float2 p) {
 
 static float fbm(float2 p) {
     float v = 0.0, a = 0.5;
-    for (int i = 0; i < 5; i++) { v += a * noise(p); p = p * 2.03 + 17.0; a *= 0.5; }
+    for (int i = 0; i < 3; i++) { v += a * noise(p); p = p * 2.03 + 17.0; a *= 0.5; }
     return v;
 }
 
@@ -25,7 +25,7 @@ static float fbm(float2 p) {
 
     // Base gradient, slowly warped so it breathes instead of sliding.
     float2 w = q + 0.06 * float2(sin(q.y * 3.1 + t * 0.21), cos(q.x * 2.7 - t * 0.17));
-    float3 col = mix(float3(top.rgb), float3(bottom.rgb), smoothstep(-0.1, 1.1, w.y + 0.08 * (fbm(w * 1.5 + t * 0.03) - 0.5)));
+    float3 col = mix(float3(top.rgb), float3(bottom.rgb), smoothstep(-0.1, 1.1, w.y + 0.04 * sin(w.x * 2.3 + t * 0.05)));
     float2 a = float2(aspect * (0.25 + 0.25 * sin(t * 0.06)), 0.40 + 0.18 * cos(t * 0.08));
     float2 b = float2(aspect * (0.75 + 0.20 * cos(t * 0.05)), 0.75 + 0.15 * sin(t * 0.07));
     col = mix(col, float3(glowA.rgb), 0.45 * exp(-dot(w - a, w - a) * 4.0));
@@ -38,7 +38,7 @@ static float fbm(float2 p) {
         float x = q.x * 1.2 + fi * 1.9;
         float line = 0.18 + 0.11 * fi
                    + 0.07 * sin(x * 1.7 + t * (0.08 + 0.03 * fi))
-                   + 0.06 * (fbm(float2(x * 1.3, t * 0.04 + fi * 5.0)) - 0.5);
+                   + 0.06 * (noise(float2(x * 1.3, t * 0.04 + fi * 5.0)) - 0.5);
         float dy = uv.y - line;
         float curtain = dy < 0.0 ? exp(-dy * dy * 1400.0) : exp(-dy * (7.0 + fi * 2.0));
         float rays = pow(fbm(float2(x * 7.0, uv.y * 0.8 - t * 0.05 + fi)), 1.6) * 1.8;

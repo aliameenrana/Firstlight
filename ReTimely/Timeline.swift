@@ -44,6 +44,8 @@ struct TimelineScreen: View {
                 Ruler(bulge: bulge, focus: focus, top: top, height: height)
                     .allowsHitTesting(false)
 
+                GlassEffectContainer {
+                ZStack(alignment: .topLeading) {
                 ForEach(alarms) { alarm in
                     AlarmLine(alarm: alarm, onChange: onChange)
                         .offset(x: 74, y: toY(alarm.minutes) - 26)
@@ -52,6 +54,8 @@ struct TimelineScreen: View {
                         .gesture(DragGesture(minimumDistance: 10, coordinateSpace: .named("timeline"))
                             .onChanged { alarm.setMinutes(toMinutes($0.location.y)) }
                             .onEnded { _ in onChange() })
+                }
+                }
                 }
 
                 if let touch {
