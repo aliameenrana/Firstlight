@@ -8,6 +8,9 @@ struct ContentView: View {
     @State private var page = ProcessInfo.processInfo.arguments.contains("-alarms") ? 1 : 0
     @State private var editing: WakeAlarm?
     @State private var placing = false
+    @State private var showSettings = false
+    @AppStorage(Settings.pop) private var popOn = true
+    @AppStorage(Settings.flee) private var fleeOn = true
 
     var body: some View {
         ZStack {
@@ -26,8 +29,15 @@ struct ContentView: View {
                             tab(0, "clock")
                             tab(1, "alarm")
                         }
-                        .glassEffect(.clear, in: .capsule)
+                        .frost(.capsule)
                         HStack {
+                            Button { showSettings = true } label: {
+                                Image(systemName: "slider.horizontal.3")
+                                    .font(.system(size: 16, weight: .light))
+                                    .foregroundStyle(.white)
+                                    .frame(width: 44, height: 44)
+                            }
+                            .frost(.circle, interactive: true)
                             Spacer()
                             Button {
                                 page = 1
@@ -39,7 +49,7 @@ struct ContentView: View {
                                     .foregroundStyle(.white)
                                     .frame(width: 44, height: 44)
                             }
-                            .glassEffect(.clear.interactive(), in: .circle)
+                            .frost(.circle, interactive: true)
                         }
                         .padding(.horizontal, 16)
                     }
@@ -54,6 +64,19 @@ struct ContentView: View {
                     .transition(.scale(scale: 0.9).combined(with: .opacity))
             }
         }
+        .simultaneousGesture(DragGesture(minimumDistance: 0, coordinateSpace: .global)
+            .onChanged { value in
+                guard fleeOn else { return }
+                Touch.shared.point = value.location
+                Touch.shared.active = true
+            }
+            .onEnded { value in
+                Touch.shared.active = false
+                if popOn && hypot(value.translation.width, value.translation.height) < 10 {
+                    Touch.shared.pop = (value.location, .now)
+                }
+            })
+        .sheet(isPresented: $showSettings) { SettingsView() }
         .animation(.easeInOut(duration: 0.35), value: page)
         .task { sync() }
         .onChange(of: phase) { sync() }
@@ -121,7 +144,7 @@ struct ClockPage: View {
                     .font(.footnote.weight(.light))
                     .padding(.horizontal, 14)
                     .padding(.vertical, 7)
-                    .glassEffect(.clear.interactive(), in: .capsule)
+                    .frost(.capsule, interactive: true)
                     .contentShape(.capsule)
                     .onTapGesture(perform: onShowAlarms)
             }

@@ -2,6 +2,10 @@ import SwiftUI
 
 struct DreamyBackground: View {
     private static let start = Date()
+    @AppStorage(Settings.bubbleOpacity) private var bubbleOpacity = 0.8
+    @AppStorage(Settings.aurora) private var aurora = 1.0
+    @AppStorage(Settings.gooey) private var gooey = false
+    private let touch = Touch.shared
 
     var body: some View {
         // The motion is slow; 30 fps is indistinguishable from 120 and quarters the GPU work on ProMotion.
@@ -12,7 +16,11 @@ struct DreamyBackground: View {
                 Rectangle()
                     .colorEffect(ShaderLibrary.dreamy(
                         .float2(geo.size), .float(t),
-                        .color(p[0]), .color(p[1]), .color(p[2]), .color(p[3])))
+                        .color(p[0]), .color(p[1]), .color(p[2]), .color(p[3]),
+                        .float4(Float(touch.point.x / geo.size.width), Float(touch.point.y / geo.size.height), touch.active ? 1 : 0, 0),
+                        .float4(Float((touch.pop?.point.x ?? 0) / geo.size.width), Float((touch.pop?.point.y ?? 0) / geo.size.height),
+                                touch.pop.map { Float($0.time.timeIntervalSince(Self.start)) } ?? -100, 0),
+                        .float(Float(bubbleOpacity)), .float(Float(aurora)), .float(gooey ? 1 : 0)))
             }
         }
         .ignoresSafeArea()

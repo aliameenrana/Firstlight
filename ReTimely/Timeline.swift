@@ -146,7 +146,7 @@ struct AlarmLine: View {
         .padding(.horizontal, 20)
         .padding(.vertical, 7)
         .frame(width: 280)
-        .glassEffect(.clear, in: .capsule)
+        .frost(.capsule)
         .opacity(alarm.enabled ? 1 : 0.55)
         .onChange(of: alarm.enabled) { onChange() }
     }
@@ -201,15 +201,12 @@ struct EditorCard: View {
             Toggle(isOn: $alarm.smartRise) {
                 VStack(alignment: .leading, spacing: 2) {
                     Text("Smart Rise")
-                    Text("A soft melody begins 30 minutes early and slowly rises.")
+                    Text("The alarm sound plays faintly before the alarm, as in Timely.")
                         .font(.caption).opacity(0.65)
                 }
             }
             .tint(.white.opacity(0.35))
-            if alarm.smartRise {
-                soundRow("Melody", icon: "sunrise", selection: $alarm.smartTrack, options: Sounds.smart)
-            }
-            soundRow("Alarm", icon: "music.note", selection: $alarm.sound, options: Sounds.alarm)
+            soundRow("Sound", icon: "music.note", selection: $alarm.sound, options: Sounds.all)
             HStack {
                 Button { confirmDelete = true } label: { Image(systemName: "trash").font(.body.weight(.light)) }
                     .confirmationDialog("Delete this alarm?", isPresented: $confirmDelete) {
@@ -223,14 +220,14 @@ struct EditorCard: View {
         .foregroundStyle(.white)
         .tint(.white)
         .padding(24)
-        .glassEffect(.clear, in: .rect(cornerRadius: 34))
+        .frost(.rect(cornerRadius: 34))
         .padding(.horizontal, 18)
     }
 
     private func soundRow(_ title: String, icon: String, selection: Binding<String>, options: [String]) -> some View {
         Menu {
             ForEach(options, id: \.self) { name in
-                Button(name) {
+                Button(Sounds.title(name)) {
                     selection.wrappedValue = name
                     Preview.play(name)
                 }
@@ -240,7 +237,7 @@ struct EditorCard: View {
                 Image(systemName: icon).frame(width: 20)
                 VStack(alignment: .leading, spacing: 1) {
                     Text(title).font(.caption).opacity(0.65)
-                    Text(selection.wrappedValue)
+                    Text(Sounds.title(selection.wrappedValue))
                 }
                 Spacer()
                 Image(systemName: "chevron.up.chevron.down").font(.caption).opacity(0.5)

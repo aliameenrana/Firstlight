@@ -1,28 +1,34 @@
 import AVFoundation
 
-// iOS cannot start audio from a suspended app, so the melody loops at zero volume from the
-// moment the app is backgrounded; that keeps the process alive until the 30-minute window opens.
+// Mirrors Timely 1.3: the alarm's own sound fades from silence to a fixed level, then holds until the alarm.
+// iOS cannot start audio from a suspended app, so the sound loops at zero volume from the moment the app is
+// backgrounded; that keeps the process alive until the window opens.
 @MainActor
 final class SmartRise {
     static let shared = SmartRise()
-    static let lead: TimeInterval = 30 * 60
-    // Fractions of the system media volume; the melody should stay at the edge of hearing.
-    static let floor: Float = 0.003
-    static let peak: Float = 0.08
 
     private var plans: [Plan] = []
-    private var target: (fire: Date, track: String)?
+    private var target: (fire: Date, sound: String)?
     private var player: AVAudioPlayer?
     private var timer: Timer?
     private var rising = false
+
+    // Timely mapped a 0...1 level to gain with (10^x - 1) / 9 and divided out the stream volume
+    // so the result sounds the same at any system volume.
+    static func gain(level: Double, compensate: Bool) -> Float {
+        var g = (pow(10, level) - 1) / 9
+        let v = Double(AVAudioSession.sharedInstance().outputVolume)
+        if compensate && v > 0 && v < 1 { g /= (pow(10, v) - 1) / 9 }
+        return Float(min(1, max(0, g)))
+    }
 
     func arm(_ plans: [Plan]) {
         self.plans = plans
         stop()
         target = plans.filter(\.active)
-            .compactMap { p in p.nextFire().map { (fire: $0, track: p.track) } }
+            .compactMap { p in p.nextFire().map { (fire: $0, sound: p.sound) } }
             .min { $0.fire < $1.fire }
-        guard let target, let url = Bundle.main.url(forResource: target.track, withExtension: "caf") else { return }
+        guard let target, let url = Bundle.main.url(forResource: target.sound, withExtension: "caf") else { return }
         let session = AVAudioSession.sharedInstance()
         try? session.setCategory(.playback, options: [.mixWithOthers])
         try? session.setActive(true)
@@ -37,8 +43,10 @@ final class SmartRise {
 
     private func tick() {
         guard let target, let player else { return }
+        let s = UserDefaults.standard
+        let lead = s.double(forKey: Settings.leadMinutes) * 60
         let left = target.fire.timeIntervalSinceNow
-        guard left <= Self.lead else { return }
+        guard left <= lead else { return }
         if !rising {
             rising = true
             player.currentTime = 0
@@ -52,8 +60,9 @@ final class SmartRise {
             }
             return
         }
-        let progress = Float(1 - left / Self.lead)
-        player.volume = Self.floor + (Self.peak - Self.floor) * progress * progress
+        let peak = s.double(forKey: Settings.level)
+        let level = min(peak, (lead - left) / max(1, s.double(forKey: Settings.riseSeconds)) * peak)
+        player.volume = Self.gain(level: level, compensate: s.bool(forKey: Settings.compensate))
     }
 
     private func stop() {
@@ -69,10 +78,10 @@ final class SmartRise {
 enum Preview {
     private static var player: AVAudioPlayer?
 
-    static func play(_ name: String) {
+    static func play(_ name: String, volume: Float = 0.5) {
         guard let url = Bundle.main.url(forResource: name, withExtension: "caf") else { return }
         player = try? AVAudioPlayer(contentsOf: url)
-        player?.volume = name.hasPrefix("Smart") ? SmartRise.peak : 0.5
+        player?.volume = volume
         player?.play()
     }
 
