@@ -53,6 +53,10 @@ struct ContentView: View {
                 EditorCard(alarm: editing, onDelete: { context.delete(editing); close() }, onDone: close)
                     .transition(.scale(scale: 0.9).combined(with: .opacity))
             }
+            if let ringing = Ringing.shared.alarmID {
+                RingingScreen(label: alarms.first { $0.id == ringing }?.label ?? "")
+                    .transition(.opacity)
+            }
         }
         .animation(.easeInOut(duration: 0.35), value: page)
         .task { sync() }
