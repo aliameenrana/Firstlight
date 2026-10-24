@@ -51,9 +51,9 @@ struct TimelineScreen: View {
                 ForEach(alarms) { alarm in
                     AlarmLine(alarm: alarm, onChange: onChange)
                         .offset(x: 74, y: toY(alarm.minutes) - 26)
-                        .opacity(alarm.id == editing?.id || placing ? 0 : 1)
+                        .opacity(editing != nil || placing ? 0 : 1)
                         .allowsHitTesting(!placing)
-                        .animation(.easeInOut(duration: 0.25), value: placing)
+                        .animation(.easeInOut(duration: 0.25), value: placing || editing != nil)
                         .onTapGesture { onEdit(alarm) }
                         .contextMenu {
                             Button("Edit", systemImage: "pencil") { onEdit(alarm) }
