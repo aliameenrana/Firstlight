@@ -50,7 +50,9 @@ struct TimelineScreen: View {
                 ForEach(alarms) { alarm in
                     AlarmLine(alarm: alarm, onChange: onChange)
                         .offset(x: 74, y: toY(alarm.minutes) - 26)
-                        .opacity(alarm.id == editing?.id ? 0 : touch == nil ? 1 : 0.3)
+                        .opacity(alarm.id == editing?.id || placing ? 0 : 1)
+                        .allowsHitTesting(!placing)
+                        .animation(.easeInOut(duration: 0.25), value: placing)
                         .onTapGesture { onEdit(alarm) }
                         .gesture(DragGesture(minimumDistance: 10, coordinateSpace: .named("timeline"))
                             .onChanged { value in
