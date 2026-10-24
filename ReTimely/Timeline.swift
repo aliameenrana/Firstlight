@@ -148,7 +148,10 @@ struct AlarmLine: View {
         .frame(width: 280)
         .frost(.capsule)
         .opacity(alarm.enabled ? 1 : 0.55)
-        .onChange(of: alarm.enabled) { onChange() }
+        .onChange(of: alarm.enabled) {
+            alarm.onceFireDate = nil
+            onChange()
+        }
     }
 }
 
@@ -222,6 +225,8 @@ struct EditorCard: View {
         .padding(24)
         .frost(.rect(cornerRadius: 34))
         .padding(.horizontal, 18)
+        .onChange(of: alarm.enabled) { alarm.onceFireDate = nil }
+        .onChange(of: alarm.days) { alarm.onceFireDate = nil }
     }
 
     private func soundRow(_ title: String, icon: String, selection: Binding<String>, options: [String]) -> some View {

@@ -11,6 +11,8 @@ final class WakeAlarm {
     var sound = "Good Morning"
     var smartRise = false
     var enabled = true
+    // When a one-time alarm is due. AlarmKit forgets it after it rings, so the app disables it once this passes.
+    var onceFireDate: Date?
 
     init() {}
 
@@ -53,6 +55,7 @@ extension WakeAlarm {
     func setMinutes(_ m: Int) {
         hour = m / 60
         minute = m % 60
+        onceFireDate = nil
     }
 
     var summary: String {

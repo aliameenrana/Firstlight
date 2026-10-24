@@ -15,6 +15,19 @@ final class SmartRise {
     private var sessionReady = false
     // Bumped on every arm so a late session callback cannot start a stale player.
     private var generation = 0
+    private var armedKey: String?
+
+    private init() {
+        // A call or Siri stops the player; resume once the interruption ends so Smart Rise is not silently lost.
+        NotificationCenter.default.addObserver(forName: AVAudioSession.interruptionNotification, object: nil, queue: .main) { note in
+            guard let raw = note.userInfo?[AVAudioSessionInterruptionTypeKey] as? UInt,
+                  AVAudioSession.InterruptionType(rawValue: raw) == .ended else { return }
+            DispatchQueue.global(qos: .userInitiated).async {
+                try? AVAudioSession.sharedInstance().setActive(true)
+                DispatchQueue.main.async { MainActor.assumeIsolated { _ = SmartRise.shared.player?.play() } }
+            }
+        }
+    }
 
     // Timely mapped a 0...1 level to gain with (10^x - 1) / 9 and divided out the stream volume
     // so the result sounds the same at any system volume.
@@ -27,11 +40,17 @@ final class SmartRise {
 
     func arm(_ plans: [Plan]) {
         self.plans = plans
-        stop()
-        target = plans.filter(\.active)
+        let next = plans.filter(\.active)
             .compactMap { p in p.nextFire().map { (fire: $0, sound: p.sound) } }
             .min { $0.fire < $1.fire }
-        guard target != nil, let url = Bundle.main.url(forResource: UserDefaults.standard.string(forKey: SmartRiseKey.sound) ?? "Smart1", withExtension: "caf") else { return }
+        let sound = UserDefaults.standard.string(forKey: SmartRiseKey.sound) ?? "Smart1"
+        let key = next.map { "\($0.fire.timeIntervalSince1970)|\(sound)" }
+        // Arm runs on every app switch; restarting an unchanged, playing session would only cost work and reset the fade.
+        if key != nil, key == armedKey, player?.isPlaying == true { return }
+        armedKey = key
+        stop()
+        target = next
+        guard target != nil, let url = Bundle.main.url(forResource: sound, withExtension: "caf") else { return }
         generation += 1
         let current = generation
         withSession { [weak self] in

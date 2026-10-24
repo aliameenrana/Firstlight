@@ -58,7 +58,7 @@ struct ContentView: View {
                 Color.black.opacity(0.25).ignoresSafeArea()
                     .onTapGesture(perform: close)
                     .transition(.opacity)
-                EditorCard(alarm: editing, onDelete: { context.delete(editing); close() }, onDone: close)
+                EditorCard(alarm: editing, onDelete: { remove(editing) }, onDone: close)
                     .transition(.scale(scale: 0.9).combined(with: .opacity))
             }
         }
@@ -96,10 +96,27 @@ struct ContentView: View {
         sync()
     }
 
+    private func remove(_ alarm: WakeAlarm) {
+        close()
+        // Deleting after the card's exit animation keeps it from reading a deleted model mid-transition.
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+            context.delete(alarm)
+            sync()
+        }
+    }
+
     private func sync() {
-        let list = alarms
-        SmartRise.shared.arm(list.map(\.plan))
-        Task { await Scheduler.sync(list) }
+        let now = Date()
+        for a in alarms where a.enabled && a.days.isEmpty {
+            if let fire = a.onceFireDate, fire < now {
+                a.enabled = false
+                a.onceFireDate = nil
+            } else if a.onceFireDate == nil {
+                a.onceFireDate = a.plan.nextFire()
+            }
+        }
+        SmartRise.shared.arm(alarms.map(\.plan))
+        Scheduler.sync(alarms)
     }
 }
 
