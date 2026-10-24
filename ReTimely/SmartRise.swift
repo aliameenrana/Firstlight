@@ -6,6 +6,9 @@ import AVFoundation
 final class SmartRise {
     static let shared = SmartRise()
     static let lead: TimeInterval = 30 * 60
+    // Fractions of the system media volume; the melody should stay at the edge of hearing.
+    static let floor: Float = 0.003
+    static let peak: Float = 0.08
 
     private var plans: [Plan] = []
     private var target: (fire: Date, track: String)?
@@ -50,7 +53,7 @@ final class SmartRise {
             return
         }
         let progress = Float(1 - left / Self.lead)
-        player.volume = 0.02 + 0.38 * progress * progress
+        player.volume = Self.floor + (Self.peak - Self.floor) * progress * progress
     }
 
     private func stop() {
@@ -69,6 +72,7 @@ enum Preview {
     static func play(_ name: String) {
         guard let url = Bundle.main.url(forResource: name, withExtension: "caf") else { return }
         player = try? AVAudioPlayer(contentsOf: url)
+        player?.volume = name.hasPrefix("Smart") ? SmartRise.peak : 0.5
         player?.play()
     }
 

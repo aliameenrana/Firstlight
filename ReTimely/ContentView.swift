@@ -13,7 +13,7 @@ struct ContentView: View {
         ZStack {
             DreamyBackground()
             if page == 0 {
-                ClockPage(next: alarms.filter(\.enabled).compactMap { $0.plan.nextFire() }.min())
+                ClockPage(next: alarms.filter(\.enabled).compactMap { $0.plan.nextFire() }.min(), onShowAlarms: { page = 1 })
                     .transition(.opacity)
             } else {
                 TimelineScreen(alarms: alarms, placing: $placing, onCreate: create, onEdit: open, onChange: sync)
@@ -21,24 +21,29 @@ struct ContentView: View {
             }
             GlassEffectContainer {
                 VStack {
-                HStack(spacing: 0) {
-                    tab(0, "clock")
-                    tab(1, "alarm")
-                }
-                .glassEffect(.clear, in: .capsule)
-                Spacer()
-                Button {
-                    page = 1
-                    withAnimation(.spring(duration: 0.35)) { placing.toggle() }
-                } label: {
-                    Image(systemName: "plus")
-                        .font(.title2.weight(.light))
-                        .rotationEffect(.degrees(placing ? 45 : 0))
-                        .foregroundStyle(.white)
-                        .frame(width: 64, height: 64)
-                }
-                .glassEffect(.clear.interactive(), in: .circle)
-                .padding(.bottom, 20)
+                    ZStack {
+                        HStack(spacing: 0) {
+                            tab(0, "clock")
+                            tab(1, "alarm")
+                        }
+                        .glassEffect(.clear, in: .capsule)
+                        HStack {
+                            Spacer()
+                            Button {
+                                page = 1
+                                withAnimation(.spring(duration: 0.35)) { placing.toggle() }
+                            } label: {
+                                Image(systemName: "plus")
+                                    .font(.system(size: 18, weight: .light))
+                                    .rotationEffect(.degrees(placing ? 45 : 0))
+                                    .foregroundStyle(.white)
+                                    .frame(width: 44, height: 44)
+                            }
+                            .glassEffect(.clear.interactive(), in: .circle)
+                        }
+                        .padding(.horizontal, 16)
+                    }
+                    Spacer()
                 }
             }
             if let editing {
@@ -67,6 +72,7 @@ struct ContentView: View {
         let alarm = WakeAlarm()
         alarm.setMinutes(minutes)
         context.insert(alarm)
+        UINotificationFeedbackGenerator().notificationOccurred(.success)
         open(alarm)
     }
 
@@ -89,6 +95,7 @@ struct ContentView: View {
 
 struct ClockPage: View {
     let next: Date?
+    var onShowAlarms: () -> Void
 
     var body: some View {
         VStack(spacing: 22) {
@@ -114,7 +121,9 @@ struct ClockPage: View {
                     .font(.footnote.weight(.light))
                     .padding(.horizontal, 14)
                     .padding(.vertical, 7)
-                    .glassEffect(.clear, in: .capsule)
+                    .glassEffect(.clear.interactive(), in: .capsule)
+                    .contentShape(.capsule)
+                    .onTapGesture(perform: onShowAlarms)
             }
             Spacer()
             Spacer()

@@ -72,8 +72,8 @@ struct TimelineScreen: View {
                         .offset(x: 120, y: toY(m) - 88)
                 }
 
-                if placing && touch == nil {
-                    Text("Drag along the timeline to set the time")
+                if touch == nil && (placing || alarms.isEmpty) {
+                    Text(placing ? "Drag along the timeline to set the time" : "No alarms. Tap + to add one.")
                         .font(.callout.weight(.light))
                         .foregroundStyle(.white.opacity(0.85))
                         .frame(width: geo.size.width)
@@ -157,6 +157,7 @@ struct EditorCard: View {
     var onDelete: () -> Void
     var onDone: () -> Void
     @State private var dragStart: Int?
+    @State private var confirmDelete = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 18) {
@@ -210,7 +211,10 @@ struct EditorCard: View {
             }
             soundRow("Alarm", icon: "music.note", selection: $alarm.sound, options: Sounds.alarm)
             HStack {
-                Button(action: onDelete) { Image(systemName: "trash").font(.body.weight(.light)) }
+                Button { confirmDelete = true } label: { Image(systemName: "trash").font(.body.weight(.light)) }
+                    .confirmationDialog("Delete this alarm?", isPresented: $confirmDelete) {
+                        Button("Delete", role: .destructive, action: onDelete)
+                    }
                 Spacer()
                 Button("Done", action: onDone).fontWeight(.medium)
             }
