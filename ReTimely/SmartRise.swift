@@ -44,10 +44,10 @@ final class SmartRise {
 
     // Timely mapped a 0...1 level to gain with (10^x - 1) / 9 and divided out the stream volume
     // so the result sounds the same at any system volume.
-    static func gain(level: Double, compensate: Bool) -> Float {
+    static func gain(level: Double) -> Float {
         var g = (pow(10, level) - 1) / 9
         let v = Double(AVAudioSession.sharedInstance().outputVolume)
-        if compensate && v > 0 && v < 1 { g /= (pow(10, v) - 1) / 9 }
+        if v > 0 && v < 1 { g /= (pow(10, v) - 1) / 9 }
         return Float(min(1, max(0, g)))
     }
 
@@ -130,7 +130,7 @@ final class SmartRise {
         guard !muted else { return }
         let peak = s.double(forKey: SmartRiseKey.level)
         let level = min(peak, (lead - left) / max(1, s.double(forKey: SmartRiseKey.rise)) * peak)
-        player.volume = Self.gain(level: level, compensate: s.bool(forKey: SmartRiseKey.compensate))
+        player.volume = Self.gain(level: level)
     }
 
     private func showPlaying() {

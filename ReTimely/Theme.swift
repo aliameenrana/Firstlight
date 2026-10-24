@@ -140,12 +140,11 @@ enum SmartRiseKey {
     static let lead = "smartRiseLead"
     static let level = "smartRiseLevel"
     static let rise = "smartRiseSeconds"
-    static let compensate = "smartRiseCompensate"
     static let sound = "smartRiseSound"
 
     // Defaults are Timely 1.3's own constants.
     static func register() {
-        UserDefaults.standard.register(defaults: [lead: 30.0, level: 0.25, rise: 75.0, compensate: true, sound: "Smartnight5"])
+        UserDefaults.standard.register(defaults: [lead: 30.0, level: 0.25, rise: 75.0, sound: "Smartnight5"])
     }
 }
 
@@ -153,7 +152,6 @@ struct SmartRiseSettings: View {
     @AppStorage(SmartRiseKey.lead) private var lead = 30.0
     @AppStorage(SmartRiseKey.level) private var level = 0.25
     @AppStorage(SmartRiseKey.rise) private var rise = 75.0
-    @AppStorage(SmartRiseKey.compensate) private var compensate = true
     @AppStorage(SmartRiseKey.sound) private var sound = "Smartnight5"
 
     var body: some View {
@@ -166,16 +164,15 @@ struct SmartRiseSettings: View {
                 Slider(value: $level, in: 0.05...0.6)
             }
             Stepper("Fades in over \(Int(rise)) s", value: $rise, in: 15...900, step: 15)
-            Toggle("Same loudness at any volume", isOn: $compensate)
             HStack {
                 Picker("Sound", selection: $sound) {
                     ForEach(Sounds.all, id: \.self) { Text(Sounds.title($0)) }
                 }
                 Spacer()
-                Button("Play at this level") { Preview.play(sound, volume: SmartRise.gain(level: level, compensate: compensate)) }
+                Button("Play at this level") { Preview.play(sound, volume: SmartRise.gain(level: level)) }
             }
             Button("Restore Timely's values") {
-                for key in [SmartRiseKey.lead, SmartRiseKey.level, SmartRiseKey.rise, SmartRiseKey.compensate, SmartRiseKey.sound] {
+                for key in [SmartRiseKey.lead, SmartRiseKey.level, SmartRiseKey.rise, SmartRiseKey.sound] {
                     UserDefaults.standard.removeObject(forKey: key)
                 }
             }
